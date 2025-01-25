@@ -143,14 +143,15 @@ PROFC_NODE("filter")
 }
 
 
-PointCloudT::Ptr voxel_grid(const PointCloudT::Ptr& cloud) {
+PointCloudT::Ptr voxel_grid(const PointCloudT::Ptr& cloud, 
+                            Eigen::Vector4d leaf_size) {
 
 PROFC_NODE("downsample")
 
-  Config& cfg = Config::getInstance();
+  leaf_size(3) = 0.;
 
   static pcl::VoxelGrid<PointT> filter;
-  filter.setLeafSize(cfg.filters.voxel_grid.leaf_size.cast<float>());
+  filter.setLeafSize(leaf_size.cast<float>());
 
   PointCloudT::Ptr out(boost::make_shared<PointCloudT>());
   filter.setInputCloud(cloud);

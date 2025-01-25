@@ -130,6 +130,10 @@ struct Config {
     bool downsample;
   } ioctree;
 
+  struct Debug {
+    std::string csv_path;
+  } debug_;
+
   static Config& getInstance() {
     static Config* config = new Config();
     return *config;

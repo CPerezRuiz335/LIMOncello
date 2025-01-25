@@ -19,10 +19,35 @@
 #include "Utils/Config.hpp"
 #include "ROSutils.hpp"
 
+#include <csvcpp.h>
 
 ros::Publisher pub_state, pub_frame, pub_raw, 
                pub_deskewed, pub_downsampled, pub_to_match;
 
+csv::CsvFile myCsv;
+
+void save_data(const State& state, const int& lidar /* 0 or 1*/) {
+  myCsv.push_back({state.stamp,
+                   lidar,
+                   state.p().x(), state.P(0,0),
+                   state.p().y(), state.P(1,1),
+                   state.p().z(), state.P(2,2),
+                   state.angular().x(), state.P(3,3),
+                   state.angular().y(), state.P(4,4),
+                   state.angular().z(), state.P(5,5),
+                   state.v().x(), state.P(12,12),
+                   state.v().y(), state.P(13,13),
+                   state.v().z(), state.P(14,14),
+                   state.b_a().x(), state.P(18,18),
+                   state.b_a().y(), state.P(19,19),
+                   state.b_a().z(), state.P(20,20),
+                   state.b_a().x(), state.P(15,15),
+                   state.b_a().y(), state.P(16,16),
+                   state.b_a().z(), state.P(17,17),
+                   state.g().x(), state.P(21,21),
+                   state.g().y(), state.P(22,22),
+                   state.g().z(), state.P(23,23)});
+}
 
 class Manager {
   State state_;
@@ -55,8 +80,8 @@ public:
     ioctree_.set_down_size(cfg.ioctree.downsample);
     ioctree_.set_min_extent(cfg.ioctree.min_extent);
     ioctree_.set_order(cfg.ioctree.order);
-  };
-  
+  }
+
   ~Manager() = default;
 
   void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
@@ -122,6 +147,7 @@ public:
       cv_prop_stamp_.notify_one();
 
       pub_state.publish(toROS(state_));
+      save_data(state_, 0);
     }
 
   }
@@ -191,27 +217,32 @@ PROFC_NODE("LiDAR Callback")
 
     PointCloudT::Ptr deskewed = deskew(raw, state_, interpolated, offset, sweep_time);
 
-    PointCloudT::Ptr downsampled(boost::make_shared<PointCloudT>());
-    *downsampled = *deskewed;
+    PointCloudT::Ptr processed = process(deskewed);
 
-    if (cfg.filters.voxel_grid.active)
-      downsampled = voxel_grid(deskewed);
-    
-    PointCloudT::Ptr processed = process(downsampled);
+    PointCloudT::Ptr to_match(boost::make_shared<PointCloudT>());
+    PointCloudT::Ptr to_save(boost::make_shared<PointCloudT>());
 
-    if (processed->points.empty()) {
+    *to_match = *to_save = *processed;
+
+    if (cfg.filters.voxel_grid.active) {
+      to_save = voxel_grid(processed, cfg.filters.voxel_grid.leaf_size * .5);
+      to_match = voxel_grid(processed, cfg.filters.voxel_grid.leaf_size * 1.5);
+    }
+
+    if (to_match->points.empty()) {
       ROS_ERROR("[LIMONCELLO] Processed & downsampled cloud is empty!");
       return;
     }
 
-    state_.update(processed, ioctree_);
+    state_.update(to_match, ioctree_);
     Eigen::Affine3f T = state_.affine3f() * state_.I2L_affine3f();
 
+    save_data(state_, 1);
   mtx_state_.unlock();
 
     PointCloudT::Ptr global(boost::make_shared<PointCloudT>());
     pcl::transformPointCloud(*deskewed, *global, T);
-    pcl::transformPointCloud(*processed, *processed, T);
+    pcl::transformPointCloud(*to_save, *to_save, T);
 
     // Publish
     pub_state.publish(toROS(state_));
@@ -220,12 +251,12 @@ PROFC_NODE("LiDAR Callback")
     if (cfg.debug) {
       pub_raw.publish(toROS(raw));
       pub_deskewed.publish(toROS(deskewed));
-      pub_downsampled.publish(toROS(downsampled));
-      pub_to_match.publish(toROS(processed));
+      pub_downsampled.publish(toROS(processed));
+      pub_to_match.publish(toROS(to_match));
     }
 
     // Update map
-    ioctree_.update(processed->points);
+    ioctree_.update(to_save->points, false);
 
     if (cfg.verbose)
       PROFC_PRINT()
@@ -234,6 +265,28 @@ PROFC_NODE("LiDAR Callback")
 
 
 int main(int argc, char** argv) {
+  std::cout << std::setprecision(100);
+  myCsv.setSeparator(',');
+  myCsv.push_back({"stamp",
+                   "lidar_update",
+                   "x", "x_var",
+                   "y", "y_var",
+                   "z", "z_var",
+                   "x_ang", "x_ang_var",
+                   "y_ang", "y_ang_var",
+                   "z_ang", "z_ang_var",
+                   "vx", "vx_var",
+                   "vy", "vy_var",
+                   "vz", "vz_var",
+                   "ba_x", "ba_x_var",
+                   "ba_y", "ba_y_var",
+                   "ba_z", "ba_z_var",
+                   "bw_x", "bw_x_var",
+                   "bw_y", "bw_y_var",
+                   "bw_z", "bw_z_var",
+                   "g_x", "g_x_var",
+                   "g_y", "g_y_var",
+                   "g_z", "g_z_var"});
 
   pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
   
@@ -276,6 +329,9 @@ int main(int argc, char** argv) {
   spinner.start();
   
   ros::waitForShutdown();
+
+  std::cout << cfg.debug_.csv_path << std::endl;
+  myCsv.save(cfg.debug_.csv_path);
 
   return 0;
 }

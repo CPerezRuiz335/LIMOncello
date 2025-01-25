@@ -216,4 +216,9 @@ void fill_config(Config& cfg, ros::NodeHandle& nh) {
   nh.getParam("iOctree/min_extent",  cfg.ioctree.min_extent);
   nh.getParam("iOctree/bucket_size", cfg.ioctree.bucket_size);
   nh.getParam("iOctree/downsample",  cfg.ioctree.downsample);
+
+
+  // Debug
+  nh.getParam("debug/csv_path",  cfg.debug_.csv_path);
+
 }

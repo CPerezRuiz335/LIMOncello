@@ -24,10 +24,10 @@
 
 struct State {
 
-  using Matrix24d = Eigen::Matrix<double, 24, 24>;
+  using Matrix24d    = Eigen::Matrix<double, 24, 24>;
   using Matrix24x12d = Eigen::Matrix<double, 24, 12>;
-  using Matrix12d = Eigen::Matrix<double, 12, 12>;
-  using Vector24d = Eigen::Matrix<double, 24, 1>;
+  using Matrix12d    = Eigen::Matrix<double, 12, 12>;
+  using Vector24d    = Eigen::Matrix<double, 24,  1>;
 
   using BundleT = manif::Bundle<double,
       manif::R3,  // position
@@ -311,15 +311,17 @@ PROFC_NODE("update")
 
 
 // Getters
-  inline Eigen::Vector3d p()       const { return X.element<0>().coeffs();   }
-  inline Eigen::Matrix3d R()       const { return X.element<1>().rotation(); }
-  inline Eigen::Quaterniond quat() const { return X.element<1>().quat();     }
-  inline Eigen::Matrix3d I2L_R()   const { return X.element<2>().rotation(); }
-  inline Eigen::Vector3d I2L_t()   const { return X.element<3>().coeffs();   }
-  inline Eigen::Vector3d v()       const { return X.element<4>().coeffs();   }
-  inline Eigen::Vector3d b_w()     const { return X.element<5>().coeffs();   }
-  inline Eigen::Vector3d b_a()     const { return X.element<6>().coeffs();   }
-  inline Eigen::Vector3d g()       const { return X.element<7>().coeffs();   }
+  inline Eigen::Vector3d p()       const { return X.element<0>().coeffs();       }
+  inline Eigen::Matrix3d R()       const { return X.element<1>().rotation();     }
+  inline Eigen::Vector3d angular() const { return X.element<1>().log().coeffs(); }
+  inline Eigen::Quaterniond quat() const { return X.element<1>().quat();         }
+  inline Eigen::Matrix3d I2L_R()   const { return X.element<2>().rotation();     }
+  inline Eigen::Vector3d I2L_t()   const { return X.element<3>().coeffs();       }
+  inline Eigen::Vector3d v()       const { return X.element<4>().coeffs();       }
+  inline Eigen::Vector3d b_w()     const { return X.element<5>().coeffs();       }
+  inline Eigen::Vector3d b_a()     const { return X.element<6>().coeffs();       }
+  inline Eigen::Vector3d g()       const { return X.element<7>().coeffs();       }
+
 
   inline Eigen::Affine3f affine3f() const {
     Eigen::Affine3d transform = Eigen::Affine3d::Identity();

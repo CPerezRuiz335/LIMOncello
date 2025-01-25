@@ -15,6 +15,9 @@ verbose: true   # print performance board
 debug: false     # fill useful intermediate pcl (deskewed, processed ...) 
                 # for visualizing purposes
 
+debug:
+  csv_path: "/home/ros/PU/src/LIMONcello_DATA/Martorell_bundle.csv"
+
 sensors:
   lidar:
     type: 0 # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
@@ -24,9 +27,9 @@ sensors:
     hz: 100
 
   calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
-    gravity_align: false     # estimate gravity vector
-    accel: false             # estimate lin. accel. bias
-    gyro: false              # estimate ang. vel. bias
+    gravity_align: true     # estimate gravity vector
+    accel: true             # estimate lin. accel. bias
+    gyro: true              # estimate ang. vel. bias
     time: .5               # time to estimate (during this time, the 
                            # robot must be at stand still)
 
@@ -79,12 +82,12 @@ filters:
     value: 180  # [deg]
   
   rate_sampling: # quick downsample
-    active: true
+    active: false
     value: 2
 
 
 IKFoM:  # Iterative Kalman Filter on Manifolds lib
-  query_iters: 10 # number of iterations doing KNN from max iterations 
+  query_iters: 1 # number of iterations doing KNN from max iterations 
   max_iters: 20  # max num of iterations of the IESEKF
   tolerance: 0.0001                      
   estimate_extrinsics: false
@@ -97,9 +100,9 @@ IKFoM:  # Iterative Kalman Filter on Manifolds lib
     bias_accel: 3.38e-4  # [rad/s * sqrt(s)]
   
   plane:                     # plane features for point to plane ICP
-    points: 5                # num of points that constitute a plane
-    max_sqrt_dist: 2.0       # [m] if a neighor exceeds is too far the plane is not valid
-    plane_threshold: 5.0e-2  # [m] max distance from point to plane to be 
+    points: 20                # num of points that constitute a plane
+    max_sqrt_dist: 1.0       # [m] if a neighor exceeds is too far the plane is not valid
+    plane_threshold: 5.0e-1  # [m] max distance from point to plane to be 
                              # considered a valid plane 
     
 
