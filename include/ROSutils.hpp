@@ -112,7 +112,7 @@ geometry_msgs::msg::TransformStamped toTF(State& state) {
   tf_msg.transform.rotation.z = state.quat().z();
   tf_msg.transform.rotation.w = state.quat().w();
  
-  tf_msg.header.stamp = rclcpp::Clock(RCL_ROS_TIME).now();
+  tf_msg.header.stamp = rclcpp::Time(state.stamp);
   tf_msg.header.frame_id = cfg.frames.world;
   tf_msg.child_frame_id = cfg.frames.body;
 
@@ -134,6 +134,7 @@ void fill_config(Config& cfg, rclcpp::Node* n) {
   // FRAMES
   n->get_parameter("frames.world", cfg.frames.world);
   n->get_parameter("frames.body", cfg.frames.body);
+  n->get_parameter("frames.tf_pub", cfg.frames.tf_pub);
 
   // SENSORS
   n->get_parameter("sensors.lidar.type",         cfg.sensors.lidar.type);
@@ -214,9 +215,17 @@ void fill_config(Config& cfg, rclcpp::Node* n) {
     std::vector<double> tmp;
     n->get_parameter("filters.voxel_grid.leaf_size", tmp);
     cfg.filters.voxel_grid.leaf_size = Eigen::Vector4d(tmp[0], tmp[1], tmp[2], 1.);
-  }
 
-  n->get_parameter("filters.min_distance.active", cfg.filters.min_distance.active);
+    n->get_parameter_or("filters.crop_box.active", cfg.filters.crop_box.active, false);
+    std::vector<double> min_pt_tmp;
+    n->get_parameter_or("filters.crop_box.min_pt", min_pt_tmp, {-1.0, -1.0, -1.0});
+    cfg.filters.crop_box.min_pt = Eigen::Vector3f(min_pt_tmp[0], min_pt_tmp[1], min_pt_tmp[2]);
+    std::vector<double> max_pt_tmp;
+    n->get_parameter_or("filters.crop_box.max_pt", max_pt_tmp, {1.0, 1.0, 1.0});
+    cfg.filters.crop_box.max_pt = Eigen::Vector3f(max_pt_tmp[0], max_pt_tmp[1], max_pt_tmp[2]);
+
+    n->get_parameter("filters.min_distance.active", cfg.filters.min_distance.active);
+  }
   n->get_parameter("filters.min_distance.value",  cfg.filters.min_distance.value);
 
   n->get_parameter("filters.fov.active", cfg.filters.fov.active);

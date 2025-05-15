@@ -14,51 +14,64 @@ limoncello:
       # output frames (the transform between frames will be broadcasted)
       world: odom
       body: base_link
+      tf_pub: false
 
     verbose: true   # print performance board
-    debug: true    # fill useful intermediate pcl (deskewed, processed ...) for visualization
+    debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
+                  # for visualizing purposes
 
     sensors:
       lidar:
-        type: 3     # LiDAR type (3: LIVOX)
-        end_of_sweep: false # not applicable for Livox
+        type: 3     # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
+        end_of_sweep: false # whether the sweep reference time is w.r.t. the
+                           # start or the end of the scan (not applicable for Livox)
       imu:
-        hz: 200     # Mid-360 IMU frequency is 200Hz
+        hz: 200     # Livox Mid-360 IMU frequency is 200Hz
 
-      calibration:  # automatic IMU calibration
+      calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
         gravity: true     # estimate gravity vector
-        accel: true             # estimate lin. accel. bias
-        gyro: true              # estimate ang. vel. bias
-        time: 5.0               # calibration time (robot must be stationary)
+        accel: true       # estimate lin. accel. bias
+        gyro: true        # estimate ang. vel. bias
+        time: 5.0         # time to estimate (during this time, the 
+                          # robot must be at stand still)
 
-      time_offset: true # account for potential sync offset between IMU and LiDAR
+      time_offset: true # whether to take into account a possible sync offset
+                       # between IMU and LiDAR (set to true if they are not properly in sync)
       TAI_offset: 0.0
 
       extrinsics:
         imu2baselink:
-          t: [-0.011, -0.02329, 0.59642]  # Using values from your fast_limo.yaml
+          t: [-0.011, -0.02329, 0.59642]  # (x, y, z) [meters]
           R: [0.0, 0.0, 0.0]              # roll, pitch, yaw [deg]
 
         lidar2baselink:
-          t: [0.0, 0.0, 0.5523]          # Using values from your fast_limo.yaml
-          R: [0.0, 0.0, 0.0]             # roll, pitch, yaw [deg]
+          t: [0.0, 0.0, 0.5523]           # (x, y, z) [meters]
+          R: [0.0, 0.0, 0.0]              # roll, pitch, yaw [deg]
 
-        gravity: 9.80665                 # standard gravity value
+        gravity: 9.80665                  # standard gravity value
 
       intrinsics:
-        accel_bias: [0.01, 0.01, 0.01]   # [m/s^2]
-        gyro_bias: [0.01, 0.01, 0.01]    # [rad/s]
+        accel_bias: [0.01, 0.01, 0.01]    # [m/s^2]
+        gyro_bias: [0.01, 0.01, 0.01]     # [rad/s]
         sm: [1.0, 0.0, 0.0,
              0.0, 1.0, 0.0,
-             0.0, 0.0, 1.0]              # sensor-to-standard axis mapping matrix
+             0.0, 0.0, 1.0]               # sensor-to-standard axis mapping matrix
+                                          # (if your IMU doesn't comply with axis system ISO-8855, 
+                                          # this matrix is meant to map its current orientation with respect
+                                          # to the standard axis system)
       
     filters:
       voxel_grid:
-        leaf_size: [0.1, 0.1, 0.1]       # Similar to your Fast-LIMO configuration
+        leaf_size: [0.1, 0.1, 0.1]
 
       min_distance:                       # sphere crop
         active: true
-        value: 1.6                        # [m] Using Fast-LIMO value
+        value: 1.6                        # [m]
+
+      crop_box:                          # box crop filter
+        active: false                    # enable/disable the crop box filter
+        min_pt: [-1.0, -1.0, -1.0]       # minimum point coordinates (x, y, z) [m]
+        max_pt: [1.0, 1.0, 1.0]          # maximum point coordinates (x, y, z) [m]
 
       fov:                                # crop field of view
         active: false
@@ -66,26 +79,27 @@ limoncello:
       
       rate_sampling:                      # quick downsample
         active: false
-        value: 4                          # Using your Fast-LIMO value
+        value: 4
 
     IKFoM:                               # Iterative Kalman Filter on Manifolds lib
       query_iters: 3                     # number of iterations doing KNN from max iterations 
       max_iters: 3                       # max num of iterations of the IESEKF
-      tolerance: 0.001                   # Using value similar to Fast-LIMO LIMITS
+      tolerance: 0.001                      
       lidar_noise: 0.001
 
       covariance:
-        gyro: 0.01                       # [m^2/s^2] Using your tuned Fast-LIMO values
+        gyro: 0.01                       # [m^2/s^2]
         accel: 0.1                       # [rad^2]
         bias_gyro: 0.001                 # [m^2/s^2 * sqrt(s)]
         bias_accel: 0.01                 # [rad/s * sqrt(s)]
       
       plane:                             # plane features for point to plane ICP
-        points: 5                        # Using number from your Fast-LIMO config
-        max_sqrt_dist: 2.0               # [m] Using your Fast-LIMO MAX_DIST_PLANE
-        plane_threshold: 0.05            # [m] Using your Fast-LIMO PLANES_THRESHOLD
+        points: 5                        # num of points that constitute a plane
+        max_sqrt_dist: 2.0               # [m] if a neighor exceeds is too far the plane is not valid
+        plane_threshold: 0.05            # [m] max distance from point to plane to be 
+                                         # considered a valid plane
         
     iOctree:
-      min_extent: 0.1                    # Minimum cell size, similar to Fast-LIMO voxel
+      min_extent: 0.1                    # Minimum cell size
       bucket_size: 5                     # Maximum points per octree leaf
       downsample: true                   # Downsample when inserting into the octree

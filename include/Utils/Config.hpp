@@ -33,6 +33,7 @@ struct Config {
   struct Frames {
     std::string world;
     std::string body;
+    bool tf_pub;
   } frames;
 
   struct Sensors {
@@ -88,6 +89,13 @@ struct Config {
 			bool active;
 			int value;
     } rate_sampling;
+
+	struct
+		{
+			bool active;
+			Eigen::Vector3f min_pt;
+			Eigen::Vector3f max_pt;
+		} crop_box;
 
   } filters;
 

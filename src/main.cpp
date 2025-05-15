@@ -191,7 +191,10 @@ public:
       cv_prop_stamp_.notify_one();
 
       pub_state->publish(toROS(state_));
-      tf_broadcaster_->sendTransform(toTF(state_));
+      
+      if (cfg.frames.tf_pub) {
+        tf_broadcaster_->sendTransform(toTF(state_));
+      }
     }
   }
 
@@ -298,37 +301,12 @@ PROFC_NODE("LiDAR Callback")
       PROFC_PRINT()
   }
 
-
   void stop_update_callback(const std_msgs::msg::Bool::ConstSharedPtr msg) {
     if (not stop_ioctree_update_ and msg->data) {
       stop_ioctree_update_ = msg->data;
       RCLCPP_INFO(this->get_logger(), "Stopping ioctree updates from now onwards");
     }
   }
-
-  void broadcastTF(const State& current_state, const std::string& world_frame, const std::string& body_frame) {
-    geometry_msgs::msg::TransformStamped tf_msg;
-
-    // Set the timestamp for the transform
-    tf_msg.header.stamp = rclcpp::Time(current_state.stamp); // Use state's timestamp
-    tf_msg.header.frame_id = world_frame;
-    tf_msg.child_frame_id = body_frame;
-
-    // Set translation
-    tf_msg.transform.translation.x = current_state.p().x();
-    tf_msg.transform.translation.y = current_state.p().y();
-    tf_msg.transform.translation.z = current_state.p().z();
-
-    // Set rotation
-    tf_msg.transform.rotation.x = current_state.quat().x();
-    tf_msg.transform.rotation.y = current_state.quat().y();
-    tf_msg.transform.rotation.z = current_state.quat().z();
-    tf_msg.transform.rotation.w = current_state.quat().w();
-
-    // Broadcast the transform
-    tf_broadcaster_->sendTransform(tf_msg);
-  }
-
 };
 
 

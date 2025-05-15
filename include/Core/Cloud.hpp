@@ -115,11 +115,22 @@ PROFC_NODE("filter")
     [&](const PointT& p) mutable {
         bool pass = true;
 
+        // Crop box filter
+        if (cfg.filters.crop_box.active)
+        {
+          if (p.x >= cfg.filters.crop_box.min_pt.x() && p.x <= cfg.filters.crop_box.max_pt.x() &&
+              p.y >= cfg.filters.crop_box.min_pt.y() && p.y <= cfg.filters.crop_box.max_pt.y() &&
+              p.z >= cfg.filters.crop_box.min_pt.z() && p.z <= cfg.filters.crop_box.max_pt.z())
+          {
+            pass = false;
+          }
+        }
+
         // Distance filter
-        if (cfg.filters.min_distance.active) {
-          if (Eigen::Vector3f(p.x, p.y, p.z).squaredNorm() 
-              <= cfg.filters.min_distance.value*cfg.filters.min_distance.value)
-              pass = false;
+        if (pass and cfg.filters.min_distance.active)
+        {
+          if (Eigen::Vector3f(p.x, p.y, p.z).squaredNorm() <= cfg.filters.min_distance.value * cfg.filters.min_distance.value)
+            pass = false;
         }
 
         // Rate filter
