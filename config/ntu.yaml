@@ -1,0 +1,107 @@
+topics:
+  input:
+    lidar: /os1_cloud_node1/points
+    imu: /imu/imu
+    stop_ioctree_udate: /stop
+  output:
+    state: state  
+    frame: full_pcl
+  frame_id: leica
+
+
+verbose: true   # print debug/performance board
+debug: false     # fill useful intermediate pcl (deskewed, processed ...) 
+                # for visualizing purposes
+
+sensors:
+  lidar:
+    type: 0 # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
+    end_of_sweep: false # whether the sweep reference time is w.r.t. the
+                        # start or the end of the scan (only applies to VELODYNE/OUSTER)
+  imu:
+    hz: 385
+
+  calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
+    gravity_align: false           # estimate gravity vector
+    accel: true             # estimate lin. accel. bias
+    gyro: true              # estimate ang. vel. bias
+    time: 3.               # time to estimate (during this time, the 
+                           # robot must be at stand still)
+
+  time_offset: true # whether to take into account a possible sync offset
+                    # between IMU and LiDAR (set to true if they are not properly in sync)
+  extrinsics:
+    imu2baselink:
+      t: [0.293656, -0.012288, -0.273095]  # (x, y, z) [meters]
+      R: [180., 0., 180.]  # roll, pitch, yaw [deg]
+
+    lidar2baselink:
+      t: [0.243656, -0.012288, -0.328095] # (x, y, z) [meters]
+      R: [180., 0., 180.]   # roll, pitch, yaw [deg]
+
+  intrinsics:
+    accel_bias: [ 0.0001, 0.0001, 0.0001 ]  # [m/s^2]
+    gyro_bias:  [ 0.0001, 0.0001, 0.0001 ]  # [rad/s]
+    sm: [ 1.,  0.,  0.,
+          0.,  1.,  0.,
+          0.,  0.,  1. ]
+
+    # (if your IMU doesn't comply with axis system ISO-8855, 
+    # this matrix is meant to map its current orientation with respect
+    # to the standard axis system)
+    #
+    #   Y-pitch
+    #   ^   
+    #   |  
+    #   | 
+    #   |
+    # Z-yaw o-----------> X-roll
+
+  
+filters:
+  voxel_grid:
+    leaf_size: [ .5, .5, .5 ]
+
+  min_distance: # sphere crop
+    active: true
+    value: 0.5  # [m]
+
+  crop_box: # w.r.t baselink frame 
+    active: false 
+    min: [0., 0., 0.] # [m] (x, y, z)
+    max: [0., 0., 0.] # [m] (x, y, z)
+
+  fov: # crop field of view
+    active: false
+    value: 180  # [deg]
+  
+  rate_sampling: # quick downsample
+    active: false
+    value: 2
+
+
+IKFoM:  # Iterative Kalman Filter on Manifolds lib
+  max_iters: 3  # max num of iterations of the IESEKF
+  tolerance: 0.0005                      
+  lidar_noise: 0.05
+  estimate_extrinsics: false
+
+  covariance:
+    gyro: 0.00367396706572        # [m^2/s^2]
+    accel: 0.0365432018302       # [rad^2]
+    bias_gyro: 2.66e-05   # [m^2/s^2 * sqrt(s)]
+    bias_accel: 0.000433  # [rad/s * sqrt(s)]
+    initial_cov: 0.001     # Initial covariance for every element in the state
+                         # i.e., P = I * initial_cov 
+  
+  plane:                     # plane features for point to plane ICP
+    points: 12                # num of points that constitute a plane
+    max_sqrt_dist: 1.       # [m] if a neighor exceeds is too far the plane is not valid
+    plane_threshold: 0.1  # [m] max distance from point to plane to be 
+                             # considered a valid plane 
+    
+
+iOctree:
+  min_extent: 0.2
+  bucket_size: 2
+  downsample: true

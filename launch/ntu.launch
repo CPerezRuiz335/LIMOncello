@@ -1,0 +1,7 @@
+<launch>
+    <param name="use_sim_time" value="true"/>
+    <node pkg="limoncello" type="limoncello" name="limoncello" output="screen" >
+        <rosparam file="$(find limoncello)/config/ntu.yaml" />
+    </node>
+
+</launch>

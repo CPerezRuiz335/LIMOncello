@@ -73,52 +73,74 @@ sensor_msgs::PointCloud2 toROS(const PointCloudT::Ptr& cloud) {
 }
 
 nav_msgs::Odometry toROS(State& state) {
-
   Config& cfg = Config::getInstance();
-
   nav_msgs::Odometry out;
 
-  // Pose/Attitude
-  out.pose.pose.position    = tf2::toMsg(state.p());
-  out.pose.pose.orientation = tf2::toMsg(state.quat());
+  Eigen::Isometry3d T_M_B = state.isometry()
+                            * cfg.sensors.extrinsics.imu2baselink.inverse();
 
-  Eigen::Vector3d v = state.R().transpose() * state.v(); 
+  Eigen::Vector3d    p_B = T_M_B.translation();
+  Eigen::Quaterniond q_B(T_M_B.linear());
 
-  // Twist
-  out.twist.twist.linear.x = v(0);
-  out.twist.twist.linear.y = v(1);
-  out.twist.twist.linear.z = v(2);
+  out.pose.pose.position.x = p_B.x();
+  out.pose.pose.position.y = p_B.y();
+  out.pose.pose.position.z = p_B.z();
+  out.pose.pose.orientation = tf2::toMsg(q_B);
 
-  out.twist.twist.angular.x = state.w(0) - state.b_w()(0);
-  out.twist.twist.angular.y = state.w(1) - state.b_w()(1);
-  out.twist.twist.angular.z = state.w(2) - state.b_w()(2);
+  Eigen::Vector3d v_B = T_M_B.linear().transpose() * state.v();
+  out.twist.twist.linear.x = v_B.x();
+  out.twist.twist.linear.y = v_B.y();
+  out.twist.twist.linear.z = v_B.z();
 
-  out.header.frame_id = Config::getInstance().topics.frame_id;
-  out.header.stamp = ros::Time::now();
+  Eigen::Vector3d w_B = state.w - state.b_w();
+  out.twist.twist.angular.x = w_B.x();
+  out.twist.twist.angular.y = w_B.y();
+  out.twist.twist.angular.z = w_B.z();
+
+  out.header.frame_id = cfg.topics.frame_id;
+  out.child_frame_id  = "base_link";
+  out.header.stamp    = ros::Time::now();
 
   return out;
 }
 
-geometry_msgs::TransformStamped toTF(State& state) {
-  
-  geometry_msgs::Transform msg;
-  msg.translation.x = state.p().x();
-  msg.translation.y = state.p().y();
-  msg.translation.z = state.p().z();
 
-  msg.rotation.x = state.quat().x();
-  msg.rotation.y = state.quat().y();
-  msg.rotation.z = state.quat().z();
-  msg.rotation.w = state.quat().w();
-  
-  geometry_msgs::TransformStamped transform_msg;
-  transform_msg.header.stamp = ros::Time::now();
-  transform_msg.header.frame_id = Config::getInstance().topics.frame_id;
-  transform_msg.child_frame_id = "base_link";
-  transform_msg.transform = msg;
+geometry_msgs::TransformStamped toTF(const Eigen::Isometry3d& T,
+                                     const std::string& parent,
+                                     const std::string& child,
+                                     const ros::Time& stamp) {
 
-  return transform_msg;
+    geometry_msgs::TransformStamped msg;
+    msg.header.stamp    = stamp;
+    msg.header.frame_id = parent;
+    msg.child_frame_id  = child;
+
+    Eigen::Vector3d    p = T.translation();
+    Eigen::Quaterniond q(T.linear());
+
+    msg.transform.translation.x = p.x();
+    msg.transform.translation.y = p.y();
+    msg.transform.translation.z = p.z();
+    msg.transform.rotation      = tf2::toMsg(q);
+
+    return msg;
 }
+
+void publishTFs(State& state, tf2_ros::TransformBroadcaster& br) {
+
+    Config& cfg = Config::getInstance();
+    ros::Time stamp = ros::Time::now();
+
+    Eigen::Isometry3d T_B_I = cfg.sensors.extrinsics.imu2baselink;
+    Eigen::Isometry3d T_I_B = T_B_I.inverse();
+    Eigen::Isometry3d T_M_B = state.isometry() * T_I_B;
+    Eigen::Isometry3d T_B_L = T_B_I * state.L2I_isometry();
+
+    br.sendTransform(toTF(T_M_B, cfg.topics.frame_id, "base_link",  stamp));
+    br.sendTransform(toTF(T_B_I, "base_link",         "imu_link",   stamp));
+    br.sendTransform(toTF(T_B_L, "base_link",         "lidar_link", stamp));
+}
+
 
 // Function to fill configuration using ROS NodeHandle
 void fill_config(Config& cfg, ros::NodeHandle& nh) {

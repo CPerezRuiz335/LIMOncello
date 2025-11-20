@@ -142,7 +142,7 @@ public:
       cv_prop_stamp_.notify_one();
 
       pub_state_.publish(toROS(state_));
-      br.sendTransform(toTF(state_));
+      publishTFs(state_, br);
     }
   }
 
