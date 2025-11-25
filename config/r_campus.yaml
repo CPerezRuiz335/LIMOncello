@@ -2,32 +2,38 @@
   ros__parameters:
     topics:
       input:
-        lidar: /velodyne_points
-        imu: /EL/Sensors/vectornav/IMU
+        lidar: /livox/lidar
+        imu:   /livox/imu 
         stop_ioctree_update: /stop
       output:
         state: state  
         frame: full_pcl
-      frame_id: global
+      frame_id: map
 
 
-    verbose: true   # print performance board
+    verbose: false   # print performance board
     debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:
       lidar:
-        type: 1 # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
+        type: 4 #  0: OUSTER 
+                #  1: VELODYNE
+                #  2: HESAI   
+                #  3: LIVOX
+                #  4: livox_interfaces/CustomMsg 
+                #  5: livox_ros_driver/CustomMsg 
+                #  6: livox_ros_driver2/CustomMsg 
         end_of_sweep: false # whether the sweep reference time is w.r.t. the
                             # start or the end of the scan (only applies to VELODYNE/OUSTER)
       imu:
-        hz: 400
+        hz: 55
 
       calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
-        gravity_align: true     # estimate gravity vector and align initial robot's rotation
+        gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: 3.               # time to estimate (during this time, the 
+        time: 1.5               # time to estimate (during this time, the 
                               # robot must be at stand still)
 
       time_offset: true # whether to take into account a possible sync offset
@@ -35,12 +41,12 @@
 
       extrinsics:
         imu2baselink:
-          t: [0., 0., 0.1] # (x, y, z) [meters]
+          t: [0., 0., 0.]  # (x, y, z) [meters]
           R: [0., 0., 0.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
-          t: [1.10, 0.0, 0.0] # (x, y, z) [meters]
-          R: [0.0, -3.5, 0.0] # roll, pitch, yaw [deg]
+          t: [0., 0., 0.] # (x, y, z) [meters]
+          R: [0., 0., 0.] # roll, pitch, yaw [deg]
         
         # NOTE: Initial lidar2imu extrinsics are obtained from 
         # imu2baslink and lidar2baselink
@@ -69,7 +75,7 @@
 
       min_distance: # sphere crop
         active: true
-        value: 1.5  # [m]
+        value: .1  # [m]
 
       crop_box: # w.r.t baselink frame 
         active: false 
@@ -77,18 +83,18 @@
         max: [0., 0., 0.] # [m] (x, y, z)
 
       fov: # crop field of view
-        active: true
-        value: 180  # [deg]
+        active: false
+        value: 180.  # [deg]
       
       rate_sampling: # quick downsample
         active: false
-        value: 2
+        value: 3
 
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.0001                      
-      lidar_noise: 0.0005
+      tolerance: 0.001                      
+      lidar_noise: 0.001
       estimate_extrinsics: false
 
       covariance:
@@ -96,13 +102,13 @@
         accel: 1.53e-2       # [rad^2]
         bias_gyro: 1.54e-5   # [m^2/s^2 * sqrt(s)]
         bias_accel: 3.38e-4  # [rad/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
+        initial_cov: 0.001     # Initial covariance for every element in the state
                             # i.e., P = I * initial_cov 
       
       plane:                     # plane features for point to plane ICP
-        points: 5                # num of points that constitute a plane
-        max_sqrt_dist: 2         # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.05    # [m] max distance from point to plane to be 
+        points: 15                # num of points that constitute a plane
+        max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
+        plane_threshold: 0.1    # [m] max distance from point to plane to be 
                                 # considered a valid plane 
 
     iOctree:

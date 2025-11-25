@@ -1,0 +1,3 @@
+[submodule "external/manif"]
+	path = external/manif
+	url = https://github.com/artivis/manif.git

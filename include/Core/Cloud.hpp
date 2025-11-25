@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <execution>
 
+#include <Eigen/Geometry>
 #include <boost/circular_buffer.hpp>
 
 #include "Core/State.hpp"
@@ -14,7 +15,7 @@
 
 States filter_states(const States& states, const double& start, const double& end) {
 
-  States out(750); // Always initialize circular buffer !!
+  States out(1000); // Always initialize circular buffer !!
 
   for (const auto& state : states) {
     if (state.stamp >= end)
@@ -74,10 +75,10 @@ PROFC_NODE("deskew")
       int i_f = binary_search(point_time(cloud->points[k], sweep_time) + offset);
 
       State X0 = buffer[i_f];
-      X0.predict(point_time(cloud->points[k], sweep_time) + offset);
+      X0.interpolate_to(point_time(cloud->points[k], sweep_time) + offset);
 
-      Eigen::Affine3f T0 = (X0.affine3d() * X0.I2L_affine3d()).cast<float>();
-      Eigen::Affine3f TN = (state.affine3d() * state.I2L_affine3d()).cast<float>();
+      Eigen::Isometry3f T0 = (X0.isometry() * X0.L2I_isometry()).cast<float>();
+      Eigen::Isometry3f TN = (state.isometry() * state.L2I_isometry()).cast<float>();
 
       Eigen::Vector3f p;  
       p << cloud->points[k].x, cloud->points[k].y, cloud->points[k].z;
@@ -98,10 +99,10 @@ PROFC_NODE("deskew")
 }
 
 
-PointCloudT::Ptr process(const PointCloudT::Ptr& cloud) {
+PointCloudT::Ptr filter(const PointCloudT::Ptr& cloud, 
+                        const Eigen::Isometry3d& lidar2baselink) {
 
 PROFC_NODE("filter")
-
 
   Config& cfg = Config::getInstance();
 
@@ -114,14 +115,21 @@ PROFC_NODE("filter")
     std::back_inserter(out->points), 
     [&](const PointT& p) mutable {
         bool pass = true;
-        Eigen::Vector3f p_; 
-        p_ = cfg.sensors.extrinsics.lidar2baselink_T.cast<float>() * p.getVector3fMap();
+        Eigen::Vector3f p_ = lidar2baselink.cast<float>() * p.getVector3fMap();
 
         // Distance filter
         if (cfg.filters.min_distance.active) {
           if (p_.squaredNorm() 
               <= cfg.filters.min_distance.value*cfg.filters.min_distance.value)
               pass = false;
+        }
+
+        // Crop box
+        if (pass and cfg.filters.crop_box.active) {
+          Eigen::Vector3f mn = cfg.filters.crop_box.min.cast<float>();
+          Eigen::Vector3f mx = cfg.filters.crop_box.max.cast<float>();
+          if ((p_.cwiseMax(mn).cwiseMin(mx).array() == p_.array()).all())
+            pass = false;
         }
 
         // Rate filter

@@ -2,29 +2,29 @@
   ros__parameters:
     topics:
       input:
-        lidar: /velodyne_points
-        imu: /EL/Sensors/vectornav/IMU
+        lidar: /os1_cloud_node1/points
+        imu: /imu/imu
         stop_ioctree_update: /stop
       output:
         state: state  
         frame: full_pcl
-      frame_id: global
+      frame_id: leica
 
 
-    verbose: true   # print performance board
-    debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
+    verbose: true   # print debug/performance board
+    debug: false     # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:
       lidar:
-        type: 1 # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
+        type: 0 # LiDAR type (0: OUSTER \ 1: VELODYNE \ 2: HESAI \ 3: LIVOX)
         end_of_sweep: false # whether the sweep reference time is w.r.t. the
                             # start or the end of the scan (only applies to VELODYNE/OUSTER)
       imu:
-        hz: 400
+        hz: 385
 
       calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
-        gravity_align: true     # estimate gravity vector and align initial robot's rotation
+        gravity_align: false           # estimate gravity vector
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
         time: 3.               # time to estimate (during this time, the 
@@ -32,19 +32,15 @@
 
       time_offset: true # whether to take into account a possible sync offset
                         # between IMU and LiDAR (set to true if they are not properly in sync)
-
       extrinsics:
         imu2baselink:
-          t: [0., 0., 0.1] # (x, y, z) [meters]
-          R: [0., 0., 0.]  # roll, pitch, yaw [deg]
+          t: [0.293656, -0.012288, -0.273095]  # (x, y, z) [meters]
+          R: [180., 0., 0.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
-          t: [1.10, 0.0, 0.0] # (x, y, z) [meters]
-          R: [0.0, -3.5, 0.0] # roll, pitch, yaw [deg]
-        
-        # NOTE: Initial lidar2imu extrinsics are obtained from 
-        # imu2baslink and lidar2baselink
-        
+          t: [0.243656, -0.012288, -0.328095] # (x, y, z) [meters]
+          R: [180., 0., 0.]   # roll, pitch, yaw [deg]
+
       intrinsics:
         accel_bias: [ 0.0001, 0.0001, 0.0001 ]  # [m/s^2]
         gyro_bias:  [ 0.0001, 0.0001, 0.0001 ]  # [rad/s]
@@ -62,6 +58,7 @@
         #   | 
         #   |
         # Z-yaw o-----------> X-roll
+
       
     filters:
       voxel_grid:
@@ -69,7 +66,7 @@
 
       min_distance: # sphere crop
         active: true
-        value: 1.5  # [m]
+        value: 0.5  # [m]
 
       crop_box: # w.r.t baselink frame 
         active: false 
@@ -77,7 +74,7 @@
         max: [0., 0., 0.] # [m] (x, y, z)
 
       fov: # crop field of view
-        active: true
+        active: false
         value: 180  # [deg]
       
       rate_sampling: # quick downsample
@@ -87,23 +84,24 @@
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.0001                      
-      lidar_noise: 0.0005
+      tolerance: 0.0005                      
+      lidar_noise: 0.05
       estimate_extrinsics: false
 
       covariance:
-        gyro: 6.01e-4        # [m/s^2]
-        accel: 1.53e-2       # [rad^2]
-        bias_gyro: 1.54e-5   # [m^2/s^2 * sqrt(s)]
-        bias_accel: 3.38e-4  # [rad/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
+        gyro: 0.00367396706572        # [m^2/s^2]
+        accel: 0.0365432018302       # [rad^2]
+        bias_gyro: 2.66e-05   # [m^2/s^2 * sqrt(s)]
+        bias_accel: 0.000433  # [rad/s * sqrt(s)]
+        initial_cov: 0.001     # Initial covariance for every element in the state
                             # i.e., P = I * initial_cov 
       
       plane:                     # plane features for point to plane ICP
-        points: 5                # num of points that constitute a plane
-        max_sqrt_dist: 2         # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.05    # [m] max distance from point to plane to be 
+        points: 12                # num of points that constitute a plane
+        max_sqrt_dist: 1.       # [m] if a neighor exceeds is too far the plane is not valid
+        plane_threshold: 0.1  # [m] max distance from point to plane to be 
                                 # considered a valid plane 
+        
 
     iOctree:
       min_extent: 0.2

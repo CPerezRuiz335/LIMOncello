@@ -8,10 +8,11 @@ def generate_launch_description():
 
     limoncello_node = Node(
         package='limoncello',
-        namespace='',
+        namespace='limoncello',
         executable='limoncello',
-        name='limoncello',
+        name='slam',
         output='screen',
+        emulate_tty=True,
         parameters=[
             PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'ouster.yaml']),
             {'use_sim_time': False}

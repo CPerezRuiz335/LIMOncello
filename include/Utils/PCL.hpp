@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/make_shared.hpp>
-
 #include <functional>
 #include <iostream>
 #include <algorithm>
@@ -51,57 +49,58 @@ PointTime point_time_func() {
 
   if (cfg.sensors.lidar.type == 0) { // OUSTER
     return cfg.sensors.lidar.end_of_sweep
-      ? [] (const PointT& p, const double& sweep_time) { return sweep_time - p.t * 1e-9f; }
-      : [] (const PointT& p, const double& sweep_time) { return sweep_time + p.t * 1e-9f; };
+      ? [] (const PointT& p, const double& sweep_time) { return sweep_time - p.t * 1e-9; }
+      : [] (const PointT& p, const double& sweep_time) { return sweep_time + p.t * 1e-9; };
 
   } else if (cfg.sensors.lidar.type == 1) { // VELODYNE
     return cfg.sensors.lidar.end_of_sweep
-      ? [] (const PointT& p, const double& sweep_time) { return sweep_time - p.time; }
-      : [] (const PointT& p, const double& sweep_time) { return sweep_time + p.time; };
+      ? [] (const PointT& p, const double& sweep_time) { return sweep_time - (double)p.time; }
+      : [] (const PointT& p, const double& sweep_time) { return sweep_time + (double)p.time; };
 
   } else if (cfg.sensors.lidar.type == 2) { // HESAI
     return [] (const PointT& p, const double& sweep_time) { return p.timestamp; };
 
-  } else if (cfg.sensors.lidar.type == 3) { // LIVOX
-    return [] (const PointT& p, const double& sweep_time) { return sweep_time + p.timestamp * 1e-9f; };
+  } else if (cfg.sensors.lidar.type > 2) { // LIVOX
+    return [] (const PointT& p, const double& sweep_time) { return p.timestamp * 1e-9; };
+  } 
 
-  } else {
-    std::cout << "-------------------------------------------\n";
-    std::cout << "LiDAR sensor type unknown or not specified!\n";
-    std::cout << "-------------------------------------------\n";
-    throw std::runtime_error("LiDAR sensor type unknown or not specified");
-  }
+  return [](const PointT& p, const double& sweep_time) { return false; };
 }
-
 
 PointTimeComp get_point_time_comp() {
   Config& cfg = Config::getInstance();
 
-  PointTimeComp point_time_cmp;
-
   if (cfg.sensors.lidar.type == 0) {
-    
-    if (cfg.sensors.lidar.end_of_sweep)
-      point_time_cmp = [](const PointT& p1, const PointT& p2) { return p1.t > p2.t; };
-    else
-      point_time_cmp = [](const PointT& p1, const PointT& p2) { return p1.t < p2.t; };
-  
+    return cfg.sensors.lidar.end_of_sweep
+      ? [](const PointT& p1, const PointT& p2) { return p1.t > p2.t; }
+      : [](const PointT& p1, const PointT& p2) { return p1.t < p2.t; };
+
   } else if (cfg.sensors.lidar.type == 1) {
+    return cfg.sensors.lidar.end_of_sweep
+      ? [](const PointT& p1, const PointT& p2) { return p1.time > p2.time; }
+      : [](const PointT& p1, const PointT& p2) { return p1.time < p2.time; };
 
-    if (cfg.sensors.lidar.end_of_sweep)
-      point_time_cmp = [](const PointT& p1, const PointT& p2) { return p1.time > p2.time; };
-    else
-      point_time_cmp = [](const PointT& p1, const PointT& p2) { return p1.time < p2.time; };
+  } else if (cfg.sensors.lidar.type > 1) {
+    return [](const PointT& p1, const PointT& p2) { return p1.timestamp < p2.timestamp; };
+  } 
 
-  } else if (cfg.sensors.lidar.type == 2 or cfg.sensors.lidar.type == 3) {
-    point_time_cmp = [](const PointT& p1, const PointT& p2) { return p1.timestamp > p2.timestamp; };
-
-  } else {
-    std::cout << "-------------------------------------------\n";
-    std::cout << "LiDAR sensor type unknown or not specified!\n";
-    std::cout << "-------------------------------------------\n";
-    throw std::runtime_error("LiDAR sensor type unknown or not specified");
-  }
-
-  return point_time_cmp;
+  return [](const PointT& p1, const PointT& p2) { return false; };
 }
+
+
+void min_at_front_max_at_back(PointCloudT::Ptr& cloud) {
+  cloud->is_dense = false;
+  std::vector<int> indices;
+  pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+
+  auto minmax = std::minmax_element(cloud->points.begin(),
+                                    cloud->points.end(), 
+                                    get_point_time_comp());
+
+  if (minmax.first != cloud->points.begin())
+    std::iter_swap(minmax.first, cloud->points.begin());
+
+  if (minmax.second != cloud->points.end() - 1)
+    std::iter_swap(minmax.second, cloud->points.end() - 1);
+}
+

@@ -43,11 +43,12 @@ class ProfileNode {
   void Print() {
     // Print: name, count, total ms, average ms, and max ms
     printf(
-        "%-25s %4d    %dms   %dms\n",
+                    // avg(ms)  max(ms)
+        "%-20s %10d%8.0f %8.0f\n",
         name_.c_str(),
         count_,
-        static_cast<int>(avg_ms_),
-        static_cast<int>(max_us_ / 1000.));
+        avg_ms_,
+        max_us_ / 1000.);
   }
 
  public:
@@ -91,17 +92,25 @@ class TheNodeList {
     static TheNodeList nodes;
     return nodes;
   }
+
   void Print() {
-    double total;
     printf("\033[2J\033[H");
     printf("----------------------------------------------------\n");
     printf("name                      count  avg(ms)  max(ms)\n");
     printf("----------------------------------------------------\n");
 
-    for (auto node : nodes_) { 
-      node->Print();
+    double total_ms = 0.0;
+    double total_max = 0.0;
+    for (auto node : nodes_) {
+        node->Print();
+        total_ms += node->avg_ms_;
+        total_max += node->max_us_;
     }
+
+    printf("----------------------------------------------------\n");
+    printf("%-26s     %8.0f %8.0f\n", "SUM", total_ms, total_max / 1000.);
   }
+
 
  private:
   std::set<ProfileNode*> nodes_;

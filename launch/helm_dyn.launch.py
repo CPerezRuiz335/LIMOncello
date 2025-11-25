@@ -13,7 +13,7 @@ def generate_launch_description():
         name='slam',
         output='screen',
         parameters=[
-            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'livox.yaml']),
+            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'helm_dyn.yaml']),
             {'use_sim_time': False}
         ],
     )

@@ -45,18 +45,18 @@ inline bool estimate_plane(Eigen::Vector4d& pabcd,
 }
 
 
-struct Match {
+struct Plane {
   Eigen::Vector3d p;
-  Eigen::Vector4d n; // global normal vector
+  Eigen::Vector4d n; // world normal vector
 
-  Match() = default;
-  Match(Eigen::Vector3d& p_, Eigen::Vector4d& n_) : p(p_), n(n_) {};
-
-  inline static double dist2plane(const Eigen::Vector4d& normal,
-                                  const Eigen::Vector3d& point) {
-
-    return normal.head<3>().dot(point) + normal(3);
-  }
+  Plane() = default;
+  Plane(Eigen::Vector3d& p_, Eigen::Vector4d& n_) : p(p_), n(n_) {};
 };
 
-typedef std::vector<Match> Matches;
+inline double dist2plane(const Eigen::Vector4d& normal,
+                         const Eigen::Vector3d& point) {
+  return normal.head<3>().dot(point) + normal(3);
+}
+
+
+typedef std::vector<Plane> Planes;
