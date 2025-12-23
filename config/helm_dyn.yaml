@@ -12,7 +12,7 @@
 
 
     verbose: false   # print performance board
-    debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
+    debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:
@@ -93,20 +93,20 @@
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.0001                      
-      lidar_noise: 0.001
+      tolerance: 0.001                      
+      lidar_noise: 0.0005
       estimate_extrinsics: false
 
       covariance:
-        gyro: 0.1        # [m/s^2]
-        accel: 1.       # [rad^2]
-        bias_gyro: 0.2   # [m^2/s^2 * sqrt(s)]
-        bias_accel: 0.2 # [rad/s * sqrt(s)]
+        gyro: 0.1        # [rad/s^2]
+        accel: 1.       # [m^2]
+        bias_gyro: 0.2   # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 0.2 # [m/s * sqrt(s)]
         initial_cov: 0.1     # Initial covariance for every element in the state
                             # i.e., P = I * initial_cov 
       
       plane:                     # plane features for point to plane ICP
-        points: 12                # num of points that constitute a plane
+        points: 5                # num of points that constitute a plane
         max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
         plane_threshold: 0.1    # [m] max distance from point to plane to be 
                                 # considered a valid plane 

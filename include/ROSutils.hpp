@@ -88,7 +88,8 @@ sensor_msgs::msg::PointCloud2 toROS(const PointCloudT::Ptr& cloud,
   
   sensor_msgs::msg::PointCloud2 out;
   pcl::toROSMsg(*cloud, out);
-  out.header.stamp = rclcpp::Time(sweep_time);
+  auto ns = static_cast<uint64_t>(std::llround(sweep_time * 1e9));
+  out.header.stamp = rclcpp::Time(ns, RCL_SYSTEM_TIME);
   out.header.frame_id = Config::getInstance().topics.frame_id;
 
   return out;
@@ -99,30 +100,25 @@ nav_msgs::msg::Odometry toROS(State& state, const double& stamp) {
   Config& cfg = Config::getInstance();
   nav_msgs::msg::Odometry out;
 
-  Eigen::Isometry3d T_M_B = state.isometry()
-                            * cfg.sensors.extrinsics.imu2baselink.inverse();
+  auto& T_B_I = cfg.sensors.extrinsics.imu2baselink;
+  Eigen::Matrix3d R_BI = T_B_I.linear();
+  Eigen::Vector3d t_BI = T_B_I.translation();
 
-  Eigen::Vector3d    p_B = T_M_B.translation();
-  Eigen::Quaterniond q_B(T_M_B.linear());
-
-  out.pose.pose.position.x = p_B.x();
-  out.pose.pose.position.y = p_B.y();
-  out.pose.pose.position.z = p_B.z();
-  out.pose.pose.orientation = tf2::toMsg(q_B);
-
-  Eigen::Vector3d v_B = T_M_B.linear().transpose() * state.v();
-  out.twist.twist.linear.x = v_B.x();
-  out.twist.twist.linear.y = v_B.y();
-  out.twist.twist.linear.z = v_B.z();
-
-  Eigen::Vector3d w_B = state.w - state.b_w();
+  Eigen::Vector3d w_B = R_BI * (state.w - state.b_w());
   out.twist.twist.angular.x = w_B.x();
   out.twist.twist.angular.y = w_B.y();
   out.twist.twist.angular.z = w_B.z();
+  
+  // velocity is global
+  Eigen::Vector3d v_B = R_BI * state.R().transpose() * state.v() + t_BI.cross(w_B);
+  out.twist.twist.linear.x  = v_B.x();
+  out.twist.twist.linear.y  = v_B.y();
+  out.twist.twist.linear.z  = v_B.z();
 
   out.header.frame_id = cfg.topics.frame_id;
   out.child_frame_id  = "base_link";
-  out.header.stamp    = rclcpp::Time(stamp);
+  auto ns = static_cast<uint64_t>(std::llround(stamp * 1e9));
+  out.header.stamp = rclcpp::Time(ns, RCL_SYSTEM_TIME);
 
   return out;
 }
@@ -151,7 +147,8 @@ geometry_msgs::msg::TransformStamped toTF(const Eigen::Isometry3d& T,
 void publishTFs(State& state, tf2_ros::TransformBroadcaster& br, const double& time) {
 
   Config& cfg = Config::getInstance();
-  rclcpp::Time stamp = rclcpp::Time(time);
+  auto ns = static_cast<uint64_t>(std::llround(time * 1e9));
+  rclcpp::Time stamp = rclcpp::Time(ns, RCL_SYSTEM_TIME);
 
   Eigen::Isometry3d T_B_I = cfg.sensors.extrinsics.imu2baselink;
   Eigen::Isometry3d T_I_B = T_B_I.inverse();

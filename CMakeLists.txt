@@ -11,8 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Global flags (you might later move BLAS/LAPACK to target_link_libraries)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -pthread -fexceptions -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -fexceptions -O3")
 
 # Other dependencies
 find_package(Boost REQUIRED COMPONENTS system)
@@ -42,12 +41,10 @@ target_include_directories(manif INTERFACE
   $<INSTALL_INTERFACE:include>
 )
 
-# Include your own headers
 include_directories(
   include
 )
 
-# Create executable
 add_executable(${PROJECT_NAME} src/main.cpp)
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -64,13 +61,11 @@ ament_target_dependencies(${PROJECT_NAME}
 	  livox_ros_driver2
 )
 
-# Link the executable with libraries
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     ${Boost_LIBRARIES}
     ${TBB_IMPORTED_TARGETS}
     manif
-    m blas lapack 
 )
 
 install(TARGETS

@@ -98,10 +98,10 @@
       estimate_extrinsics: false
 
       covariance:
-        gyro: 6.01e-4        # [m/s^2]
-        accel: 1.53e-2       # [rad^2]
-        bias_gyro: 1.54e-5   # [m^2/s^2 * sqrt(s)]
-        bias_accel: 3.38e-4  # [rad/s * sqrt(s)]
+        gyro: 6.01e-4        # [rad/s^2]
+        accel: 1.53e-2       # [m^2]
+        bias_gyro: 1.54e-5   # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 3.38e-4  # [m/s * sqrt(s)]
         initial_cov: 0.001     # Initial covariance for every element in the state
                             # i.e., P = I * initial_cov 
       

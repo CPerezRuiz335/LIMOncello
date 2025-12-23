@@ -43,7 +43,7 @@ struct State {
 
 
   static constexpr int DoF = BundleT::DoF;  // DoF whole state
-  static constexpr int DoFS2 = DoF;       // DoF g as S2
+  static constexpr int DoFS2 = DoF-1;       // DoF g as S2
   static constexpr int DoFNoise = 4*3;      // b_w, b_a, n_{b_w}, n_{b_a}
   static constexpr int DoFObs = manif::SGal3d::DoF + manif::SE3d::DoF;   // DoF obsevation equation
 
@@ -101,22 +101,22 @@ PROFC_NODE("predict")
       Mat<3> AdjS2, JrS2;
       S2::compose(g(), {0., 0., 0.}, AdjS2, JrS2);
 
-      // Adj.template bottomRightCorner<3, 3>() = AdjS2;
-      // Jr.template bottomRightCorner<3, 3>() = JrS2;
+      Adj.template bottomRightCorner<3, 3>() = AdjS2;
+      Jr.template bottomRightCorner<3, 3>() = JrS2;
 
       // Projections: Left
       Mat<2, 3> Jx;
       S2::ominus(g(), g(), Jx);
 
       Mat<DoFS2, DoF> left = Mat<DoFS2, DoF>::Identity();
-      // left.template bottomRightCorner<2, 3>() = Jx;
+      left.template bottomRightCorner<2, 3>() = Jx;
       
       // Projections: Right
-      // Mat<3, 2> Ju;
-      // S2::oplus(g(), {0., 0.}, {}, Ju);
+      Mat<3, 2> Ju;
+      S2::oplus(g(), {0., 0.}, {}, Ju);
 
       Mat<DoF, DoFS2> right = Mat<DoF, DoFS2>::Identity();
-      // right.template bottomRightCorner<3, 2>() = Ju;
+      right.template bottomRightCorner<3, 2>() = Ju;
 
     Mat<DoFS2>           Fx = left * (Adj + Jr * df_dx(imu) * dt) * right; // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (26)
     Mat<DoFS2, DoFNoise> Fw = left * Adj * df_dw() * dt;                   // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (27)
@@ -183,9 +183,6 @@ PROFC_NODE("predict")
 PROFC_NODE("update")
 
     Config& cfg = Config::getInstance();
-
-    if (map.size() == 0)
-      return;
 
 // OBSERVATION MODEL
 
@@ -293,7 +290,7 @@ PROFC_NODE("update")
       // project P to homemorphic space
         Mat<DoF> J_;
         Vec<DoFS2> dx = X.minus(X_predicted, J_).coeffs().head(DoFS2);
-        // dx.tail(2) = S2::ominus(g(), g_pred);
+        dx.tail(2) = S2::ominus(g(), g_pred);
 
         // d/db ((g oplus b) ominus g_pred) | b = 0
         Mat<DoFS2> J_inv = J_.topLeftCorner(DoFS2, DoFS2).inverse();
@@ -314,12 +311,12 @@ PROFC_NODE("update")
       dx = Kz + (KH - Mat<DoFS2>::Identity()) * J_inv * dx; 
       
       // Update manif Bundle, left g unmodified
-      Tangent tau = dx;//Tangent::Zero();
-      // tau.coeffs().head(DoF-3) = dx.head(DoF-3);
+      Tangent tau = Tangent::Zero();
+      tau.coeffs().head(DoF-3) = dx.head(DoF-3);
 
       // Update
       X = X.plus(tau);
-      // g(S2::oplus(g(), dx.tail(2)));
+      g(S2::oplus(g(), dx.tail(2)));
 
       if ((dx.array().abs() <= cfg.ikfom.tolerance).all())
         break;

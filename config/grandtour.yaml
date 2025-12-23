@@ -11,7 +11,7 @@
       frame_id: map
 
 
-    verbose: true   # print debug/performance board
+    verbose: false   # print debug/performance board
     debug: true     # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
@@ -33,7 +33,7 @@
         gravity_align: false           # estimate gravity vector
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: 1.               # time to estimate (during this time, the 
+        time: .5               # time to estimate (during this time, the 
                               # robot must be at stand still)
 
       time_offset: false # whether to take into account a possible sync offset
@@ -95,17 +95,17 @@
       estimate_extrinsics: false
 
       covariance:
-        gyro: 0.0001        # [m^2/s^2]
-        accel: 0.01       # [rad^2]
-        bias_gyro: 0.00001   # [m^2/s^2 * sqrt(s)]
-        bias_accel: 0.0001  # [rad/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
-                            # i.e., P = I * initial_cov 
+        gyro: 0.01        # [rad^2/s^2]
+        accel: .1       # [m^2]
+        bias_gyro: 0.001   # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 0.001  # [m/s * sqrt(s)]
+        initial_cov: 0.00001     # Initial covariance for every element in the state
+                                 # i.e., P = I * initial_cov 
       
       plane:                     # plane features for point to plane ICP
-        points: 12                # num of points that constitute a plane
+        points: 5                # num of points that constitute a plane
         max_sqrt_dist: 1.       # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.1  # [m] max distance from point to plane to be 
+        plane_threshold: 0.05  # [m] max distance from point to plane to be 
                                 # considered a valid plane 
         
 

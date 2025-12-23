@@ -12,6 +12,7 @@ def generate_launch_description():
         executable='limoncello',
         name='slam',
         output='screen',
+        emulate_tty=True,
         parameters=[
             PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'helm_dyn.yaml']),
             {'use_sim_time': False}

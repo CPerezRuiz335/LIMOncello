@@ -4,7 +4,6 @@
       input:
         lidar: /livox/lidar
         imu:  /vn100/imu
-        # imu:   /vn200/imu  
         stop_ioctree_update: /stop
       output:
         state: state  
@@ -34,7 +33,7 @@
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: .0               # time to estimate (during this time, the 
+        time: .5               # time to estimate (during this time, the 
                              # robot must be at stand still)
 
       time_offset: false # whether to take into account a possible sync offset
@@ -72,11 +71,11 @@
       
     filters:
       voxel_grid:
-        leaf_size: [ .5, .5, .5 ]
+        leaf_size: [ .25, .25, .25 ]
 
       min_distance: # sphere crop
         active: true
-        value: 0.2  # [m]
+        value: 1.5  # [m]
 
       crop_box: # w.r.t baselink frame 
         active: false 
@@ -93,26 +92,25 @@
 
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
-      max_iters: 15  # max num of iterations of the IESEKF
+      max_iters: 5  # max num of iterations of the IESEKF
       tolerance: 0.001                      
-      lidar_noise: 0.001
+      lidar_noise: 0.0005
       estimate_extrinsics: false
 
       covariance:
-        gyro: 0.1        # [m/s^2]
-        accel: 0.1       # [rad^2]
-        bias_gyro: 0.2   # [m^2/s^2 * sqrt(s)]
-        bias_accel: 0.2  # [rad/s * sqrt(s)]
+        gyro: 5.0e-3        # [rad/s^2]
+        accel:  6.0e-2       # [m^2]
+        bias_gyro: 3.0e-6  # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 8.0e-5  # [m/s * sqrt(s)]
         initial_cov: 0.0005     # Initial covariance for every element in the state
                             # i.e., P = I * initial_cov 
-      
       plane:                     # plane features for point to plane ICP
         points: 5                # num of points that constitute a plane
         max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.1    # [m] max distance from point to plane to be 
+        plane_threshold: .1    # [m] max distance from point to plane to be 
                                 # considered a valid plane 
 
     iOctree:
       min_extent: 0.2
-      bucket_size: 2
+      bucket_size: 4
       downsample: true
