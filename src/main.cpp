@@ -312,8 +312,12 @@ public:
     }
 
     state_.update(filtered, ioctree_);
-
     Eigen::Isometry3f T = (state_.isometry() * state_.L2I_isometry()).cast<float>();
+  
+  mtx_buffer_.lock();
+    state_buffer_[0] = state_;
+  mtx_buffer_.unlock();
+
   mtx_state_.unlock();
 
     PointCloudT::Ptr global(new PointCloudT);

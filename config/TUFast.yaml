@@ -8,11 +8,11 @@
       output:
         state: state  
         frame: full_pcl
-      frame_id: global
+      frame_id: map
 
 
     verbose: true   # print performance board
-    debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
+    debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:

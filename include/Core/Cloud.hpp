@@ -43,19 +43,19 @@ PointCloudT::Ptr deskew(const PointCloudT::Ptr& cloud,
 PROFC_NODE("deskew")
 
   auto binary_search = [&](const double& t) {
-    int l(0), r(buffer.size()-1);
-    
-    while (l < r) {
-      int m = (l + r) / 2;
-      if (buffer[m].stamp == t)
-        return m;
-      else if (t < buffer[m].stamp)
-        r = m - 1;
-      else
-        l = m + 1;
-    }
+    if (buffer.empty()) return -1;
+    if (t <= buffer.front().stamp) return 0;
+    if (t >= buffer.back().stamp)  return (int)(buffer.size() - 1);
 
-    return l-1 > 0 ? l-1 : l;
+    int l = 0, r = buffer.size() - 1;
+    while (l < r) {
+        int m = l + (r - l + 1) / 2;
+        if (buffer[m].stamp <= t)
+          l = m;
+        else
+          r = m - 1;
+    }
+    return l;
   };
 
 
@@ -80,9 +80,7 @@ PROFC_NODE("deskew")
       Eigen::Isometry3f T0 = (X0.isometry() * X0.L2I_isometry()).cast<float>();
       Eigen::Isometry3f TN = (state.isometry() * state.L2I_isometry()).cast<float>();
 
-      Eigen::Vector3f p;  
-      p << cloud->points[k].x, cloud->points[k].y, cloud->points[k].z;
-
+      Eigen::Vector3f p = cloud->points[k].getVector3fMap();  
       p = TN.inverse() * T0 * p;
 
       PointT pt;

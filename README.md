@@ -13,7 +13,7 @@ dependencies.
 LIMOncello is essentially FAST-LIO 2 with the Fast LIMO (and thus DLIO) implementation, but
 without any dependency on the [IKFoM](https://github.com/hku-mars/IKFoM) or
 [ikd-Tree](https://github.com/hku-mars/ikd-Tree) C++ libraries. It implements an Iterated Error
-State Extended Kalman Filter (ISEKF) as described in IKFoM and FAST-LIO 2, reimplemented using
+State Extended Kalman Filter (IESKF) as described in IKFoM and FAST-LIO 2, reimplemented using
 the [manif](https://github.com/artivis/manif) library and a refactored version of the original
 [iOctree](https://github.com/zhujun3753/i-octree) data structure.
 
@@ -64,59 +64,62 @@ which provides accessible, elegant Lie algebra tools for nearly any manifold use
 
 ## How To
 
-Most parameters are already commented in each configuration file. However,  
-special attention should be paid to those related to `sensors.calibration`,  
+Most parameters are documented directly in each configuration file. However,
+special attention should be paid to those related to `sensors.calibration`,
 `sensors.time_offset`, `sensors.extrinsics`, and `sensors.intrinsics`.
 
-First, note that LIMOncello assumes the **NEU** convention for the world  
-reference frame of any robot. The `sensors.extrinsics` are defined with respect  
-to `base_link`, which is an arbitrarily chosen location on the robot. For  
-example, in wheeled vehicles this is often the projection of the center of  
-gravity (CoG) onto the x–y plane, such that the LiDAR map places the floor on  
-the x–y plane. Most IMUs follow the NEU convention, but they are often rotated  
-180 degrees about the x-axis, resulting in the z-axis pointing downward.
+First, note that the IMU reference frame is used as the robot reference frame in
+the Kalman filter. The IMU frame and LiDAR frame are both defined with respect
+to the `base_link`, which is an arbitrarily chosen reference location on the robot.
+For example, in wheeled vehicles this is often the projection of the center of
+gravity (CoG) onto the x–y plane, such that the LiDAR map places the floor on
+the x–y plane.
 
-`sensors.intrinsics` can be manually provided and are typically obtained from a  
-static IMU calibration procedure, during which Allan noise parameters are also  
-estimated. These values are used to configure `IKFoM.covariance`. Although they  
-can be manually set, if the IMU is not calibrated it is recommended to use  
-reasonably large values (but not exceeding 1). If poor initialization is  
-observed, it is most likely due to incorrect initial bias estimation. In such  
-cases, you may also reduce the initial covariance value  
-`IKFoM.covariance.initial_cov` to help stabilize the filter startup (this  
-should be done cautiously).
+Under this convention, `sensors.extrinsics.imu2baselink` defines the initial pose
+(position and orientation) of the system at startup, meaning `base_link` coincides
+with the world origin at that moment. For instance, most IMUs follow the NEU convention, 
+but they are often rotated 180 degrees about the x-axis, resulting in the z-axis pointing 
+downward. In such case, that must be accounted for in `sensors.extrinsics.imu2baselink`.
 
-This is where `sensors.calibration` becomes useful. Specifically,  
-`sensors.calibration.gravity_align` attempts to refine the initial orientation  
-defined in `sensors.extrinsics.imu2baselink`. The IMU reference frame is  
-considered the robot reference frame, and the initial pose (position and  
-orientation) is defined by `sensors.extrinsics.imu2baselink`; therefore,  
-`base_link` is assumed to be at the origin at startup. The gravity alignment  
-works by exploiting the fact that gravity always points downward and by  
-detecting discrepancies between the expected gravity direction and the  
-accelerometer measurements in a static condition.
+`sensors.intrinsics` may be manually specified and are typically obtained from a
+static IMU calibration procedure, during which Allan noise parameters are also
+estimated—Allan noise parameters are used to configure `IKFoM.covariance`.
+If the IMU has not been calibrated, it is recommended to assign reasonably large
+values (but not exceeding 1) to `IKFoM.covariance`, and smaller
+values to `sensors.intrinsics`.
 
-Although the LiDAR and IMU are physically misaligned,  
-`sensors.calibration.gravity_align` applies the same rotation and translation  
-correction to both sensors, assuming they are rigidly mounted to the same  
-body. The relative extrinsics between the IMU and the LiDAR are therefore kept  
-fixed and are not re-estimated. As a consequence, the IMU (and thus the robot) may 
-not appear level with respect to the ground.  
+If poor initialization is observed, it is most likely due to incorrect initial bias
+estimation. In such cases, you may reduce the initial covariance value
+`IKFoM.covariance.initial_cov` to help stabilize the filter startup (this should be
+done cautiously), or calibrate the bias online using `sensors.calibration`,
+assuming the robot is stationary. When enabled, `sensors.calibration.gravity_align`
+attempts to refine the initial orientation defined in `sensors.extrinsics.imu2baselink`.
+Gravity alignment exploits the fact that gravity always points downward by detecting
+discrepancies between the expected gravity direction and the accelerometer
+measurements during static conditions.
 
-It is strongly discouraged to enable `IKFoM.estimate_extrinsics`. In most  
-practical scenarios, online extrinsic estimation does not converge reliably  
-and often leads to unstable or incorrect results. Providing accurate extrinsic  
-parameters offline is the recommended approach.
+Although the LiDAR and IMU may be physically misaligned,
+`sensors.calibration.gravity_align` applies the same rotation and translation
+correction to both sensors, assuming they are rigidly mounted to the same body.
+The relative extrinsics between the IMU and the LiDAR therefore remain fixed and
+are not re-estimated. As a result, the IMU (and thus the robot body frame) may not
+appear level with respect to the ground.
 
-`sensors.time_offset` does not need to be set when the LiDAR and IMU  
-are not hardware-synchronized. As long as messages are timestamped within the  
-same UTC time domain, LIMOncello will handle the alignment internally. This  
-parameter is mainly useful when the sensors are not properly synchronized at  
+It is strongly discouraged to enable `IKFoM.estimate_extrinsics`. In most practical
+scenarios, online extrinsic estimation does not converge reliably and often leads to
+unstable or incorrect behavior. Providing accurate extrinsic parameters offline is
+the recommended approach.
+
+`sensors.time_offset` does not need to be set when the LiDAR and IMU are not
+hardware synchronized. As long as both sensors timestamp messages using the same
+UTC time base, LIMOncello will handle the alignment internally. This parameter is
+primarily intended for situations where the sensors are not properly synchronized at
 the software level.
 
-Finally, note that the estimated velocity is published with respect to  
-`base_link` and not the IMU frame. This frame conversion can be modified in  
-`include/ROSUtils.hpp` if a different convention is required.
+Finally, note that the estimated velocity is published with respect to `base_link`,
+not the IMU frame. This frame convention can be modified in
+`include/ROSUtils.hpp` if needed.
+
 
 
 ## Configuration
