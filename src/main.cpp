@@ -141,8 +141,8 @@ public:
 
       cv_prop_stamp_.notify_one();
 
-      pub_state_.publish(toROS(state_));
-      publishTFs(state_, br);
+      pub_state_.publish(toROS(state_, imu.stamp));
+      publishTFs(state_, br, imu.stamp);
     }
   }
 
@@ -227,14 +227,14 @@ public:
     pcl::transformPointCloud(*filtered, *to_save, T);
 
     // Publish
-    pub_state_.publish(toROS(state_));
-    pub_frame_.publish(toROS(global));
+    pub_state_.publish(toROS(state_, sweep_time));
+    pub_frame_.publish(toROS(global, sweep_time));
 
     if (cfg.debug) {
-      pub_raw_.publish(toROS(raw));
-      pub_deskewed_.publish(toROS(deskewed));
-      pub_downsampled_.publish(toROS(downsampled));
-      pub_filtered_.publish(toROS(to_save));
+      pub_raw_.publish(toROS(raw, sweep_time));
+      pub_deskewed_.publish(toROS(deskewed, sweep_time));
+      pub_downsampled_.publish(toROS(downsampled, sweep_time));
+      pub_filtered_.publish(toROS(to_save, sweep_time));
     }
 
     // Update map
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
                                          &manager,
                                          ros::TransportHints().tcpNoDelay());
 
-  ros::Subscriber stop_sub = nh.subscribe(cfg.topics.input.stop_ioctree_udate,
+  ros::Subscriber stop_sub = nh.subscribe(cfg.topics.input.stop_ioctree_update,
                                           10,
                                           &Manager::stop_update_callback,
                                           &manager);

@@ -2,7 +2,7 @@ topics:
   input:
     lidar: /os1_cloud_node1/points
     imu: /imu/imu
-    stop_ioctree_udate: /stop
+    stop_ioctree_update: /stop
   output:
     state: state  
     frame: full_pcl
@@ -33,11 +33,11 @@ sensors:
   extrinsics:
     imu2baselink:
       t: [0.293656, -0.012288, -0.273095]  # (x, y, z) [meters]
-      R: [180., 0., 180.]  # roll, pitch, yaw [deg]
+      R: [180., 0., 0.]  # roll, pitch, yaw [deg]
 
     lidar2baselink:
       t: [0.243656, -0.012288, -0.328095] # (x, y, z) [meters]
-      R: [180., 0., 180.]   # roll, pitch, yaw [deg]
+      R: [180., 0., 0.]   # roll, pitch, yaw [deg]
 
   intrinsics:
     accel_bias: [ 0.0001, 0.0001, 0.0001 ]  # [m/s^2]

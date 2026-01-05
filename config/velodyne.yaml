@@ -2,14 +2,14 @@ topics:
   input:
     lidar: /velodyne_points
     imu: /EL/Sensors/vectornav/IMU
-    stop_ioctree_udate: /stop
+    stop_ioctree_update: /stop
   output:
     state: state  
     frame: full_pcl
   frame_id: global
 
 
-verbose: true   # print performance board
+verbose: false   # print performance board
 debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
                 # for visualizing purposes
 
@@ -84,7 +84,7 @@ filters:
 
 
 IKFoM:  # Iterative Kalman Filter on Manifolds lib
-  max_iters: 1  # max num of iterations of the IESEKF
+  max_iters: 3  # max num of iterations of the IESEKF
   tolerance: 0.0001                      
   lidar_noise: 0.0005
   estimate_extrinsics: false

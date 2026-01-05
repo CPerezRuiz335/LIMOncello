@@ -6,8 +6,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include <sensor_msgs/PointCloud2.h>
-
 #define PCL_NO_PRECOMPILE
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>

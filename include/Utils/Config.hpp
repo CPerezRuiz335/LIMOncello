@@ -23,7 +23,7 @@ struct Config {
   	struct {
   		std::string lidar;
   		std::string imu;
-			std::string stop_ioctree_udate;
+		std::string stop_ioctree_update;
   	} input;
 
   	struct {

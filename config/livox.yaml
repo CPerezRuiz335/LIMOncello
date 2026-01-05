@@ -2,7 +2,7 @@ topics:
   input:
     lidar: /boxi/livox/points
     imu: /boxi/livox/imu
-    stop_ioctree_udate: /stop
+    stop_ioctree_update: /stop
   output:
     state: state  
     frame: full_pcl

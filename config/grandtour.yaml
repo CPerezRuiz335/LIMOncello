@@ -2,7 +2,7 @@ topics:
   input:
     lidar: /boxi/hesai/points
     imu: /boxi/cpt7/imu
-    stop_ioctree_udate: /stop
+    stop_ioctree_update: /stop
   output:
     state: state  
     frame: full_pcl

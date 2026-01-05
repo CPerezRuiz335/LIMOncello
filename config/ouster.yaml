@@ -1,16 +1,16 @@
 topics:
   input:
-    lidar: /os1_cloud_node/points
-    imu:   /os1_cloud_node/imu
-    stop_ioctree_udate: /stop
+    lidar: /os_cloud_node/points
+    imu:   /vn100/imu 
+    stop_ioctree_update: /stop
   output:
     state: state  
     frame: full_pcl
   frame_id: global
 
 
-verbose: true   # print performance board
-debug: false    # fill useful intermediate pcl (deskewed, processed ...) 
+verbose: false   # print performance board
+debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                 # for visualizing purposes
 
 sensors:
@@ -19,13 +19,13 @@ sensors:
     end_of_sweep: false # whether the sweep reference time is w.r.t. the
                         # start or the end of the scan (only applies to VELODYNE/OUSTER)
   imu:
-    hz: 125
+    hz: 400
 
   calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
     gravity_align: false     # estimate gravity vector and align initial robot's rotation
     accel: true             # estimate lin. accel. bias
     gyro: true              # estimate ang. vel. bias
-    time: 3.               # time to estimate (during this time, the 
+    time: 1.               # time to estimate (during this time, the 
                            # robot must be at stand still)
 
   time_offset: false # whether to take into account a possible sync offset
@@ -33,12 +33,12 @@ sensors:
 
   extrinsics:
     imu2baselink:
-      t: [0., 0., 0.98] # (x, y, z) [meters]
-      R: [-1., -5.5, 0.]  # roll, pitch, yaw [deg]
+      t: [0., 0., 0.0] # (x, y, z) [meters]
+      R: [180., 0., 0.]  # roll, pitch, yaw [deg]
 
     lidar2baselink:
-      t: [0., 0., 0.98] # (x, y, z) [meters]
-      R: [-1., -5.5, 0.] # roll, pitch, yaw [deg]
+      t: [0., 0., 0.0] # (x, y, z) [meters]
+      R: [0., 0., 0.] # roll, pitch, yaw [deg]
     
     # NOTE: Initial lidar2imu extrinsics are obtained from 
     # imu2baslink and lidar2baselink
@@ -63,7 +63,7 @@ sensors:
   
 filters:
   voxel_grid:
-    leaf_size: [ .5, .5, .5 ]
+    leaf_size: [ 0.5, .5, .5 ]
 
   min_distance: # sphere crop
     active: true
@@ -80,11 +80,11 @@ filters:
   
   rate_sampling: # quick downsample
     active: false
-    value: 2
+    value: 3
 
 
 IKFoM:  # Iterative Kalman Filter on Manifolds lib
-  max_iters: 1  # max num of iterations of the IESEKF
+  max_iters: 2  # max num of iterations of the IESEKF
   tolerance: 0.001                      
   lidar_noise: 0.001
   estimate_extrinsics: false
@@ -98,9 +98,9 @@ IKFoM:  # Iterative Kalman Filter on Manifolds lib
                          # i.e., P = I * initial_cov 
   
   plane:                     # plane features for point to plane ICP
-    points: 5                # num of points that constitute a plane
-    max_sqrt_dist: 2         # [m] if a neighor exceeds is too far the plane is not valid
-    plane_threshold: 0.05    # [m] max distance from point to plane to be 
+    points: 15                # num of points that constitute a plane
+    max_sqrt_dist: 1         # [m] if a neighor exceeds is too far the plane is not valid
+    plane_threshold: 0.1    # [m] max distance from point to plane to be 
                              # considered a valid plane 
 
 iOctree:
