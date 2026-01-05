@@ -100,6 +100,14 @@ nav_msgs::msg::Odometry toROS(State& state, const double& stamp) {
   Config& cfg = Config::getInstance();
   nav_msgs::msg::Odometry out;
 
+  Eigen::Isometry3d T_M_B =
+      state.isometry() * cfg.sensors.extrinsics.imu2baselink.inverse();
+
+  out.pose.pose.position.x = T_M_B.translation().x();
+  out.pose.pose.position.y = T_M_B.translation().y();
+  out.pose.pose.position.z = T_M_B.translation().z();
+  out.pose.pose.orientation = tf2::toMsg(Eigen::Quaterniond(T_M_B.linear()));
+
   auto& T_B_I = cfg.sensors.extrinsics.imu2baselink;
   Eigen::Matrix3d R_BI = T_B_I.linear();
   Eigen::Vector3d t_BI = T_B_I.translation();
@@ -108,12 +116,12 @@ nav_msgs::msg::Odometry toROS(State& state, const double& stamp) {
   out.twist.twist.angular.x = w_B.x();
   out.twist.twist.angular.y = w_B.y();
   out.twist.twist.angular.z = w_B.z();
-  
-  // velocity is global
-  Eigen::Vector3d v_B = R_BI * state.R().transpose() * state.v() + t_BI.cross(w_B);
-  out.twist.twist.linear.x  = v_B.x();
-  out.twist.twist.linear.y  = v_B.y();
-  out.twist.twist.linear.z  = v_B.z();
+
+  Eigen::Vector3d v_B =
+      R_BI * state.R().transpose() * state.v() + t_BI.cross(w_B);
+  out.twist.twist.linear.x = v_B.x();
+  out.twist.twist.linear.y = v_B.y();
+  out.twist.twist.linear.z = v_B.z();
 
   out.header.frame_id = cfg.topics.frame_id;
   out.child_frame_id  = "base_link";
