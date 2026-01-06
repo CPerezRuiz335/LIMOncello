@@ -19,9 +19,6 @@ sensors:
             #  1: VELODYNE
             #  2: HESAI   
             #  3: LIVOX
-            #  4: livox_interfaces/CustomMsg 
-            #  5: livox_ros_driver/CustomMsg 
-            #  6: livox_ros_driver2/CustomMsg 
     end_of_sweep: false # whether the sweep reference time is w.r.t. the
                         # start or the end of the scan (only applies to VELODYNE/OUSTER)
   imu:
