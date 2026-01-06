@@ -3,7 +3,7 @@
     <arg name="rviz" default="false"/>
 
     <node pkg="limoncello" type="limoncello" name="limoncello" output="screen" >
-        <rosparam file="$(find limoncello)/config/velodyne.yaml" />
+        <rosparam file="$(find limoncello)/config/cat16x.yaml" />
     </node>
 
     <node pkg="rviz" name="rviz_limo" type="rviz" args="-d $(find limoncello)/config/rviz/limo.rviz" if="$(arg rviz)"/>

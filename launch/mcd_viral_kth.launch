@@ -1,8 +1,9 @@
 <launch>
+
     <arg name="rviz" default="false"/>
 
     <node pkg="limoncello" type="limoncello" name="limoncello" output="screen" >
-        <rosparam file="$(find limoncello)/config/ouster.yaml" />
+        <rosparam file="$(find limoncello)/config/mcd_viral_kth.yaml" />
     </node>
 
     <node pkg="rviz" name="rviz_limo" type="rviz" args="-d $(find limoncello)/config/rviz/limo.rviz" if="$(arg rviz)"/>
