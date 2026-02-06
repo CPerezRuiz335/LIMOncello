@@ -117,7 +117,7 @@ PROFC_NODE("predict")
       right.template bottomRightCorner<3, 2>() = Ju;
 
     Mat<DoFS2>           Fx = left * (Adj + Jr * df_dx(imu) * dt) * right; // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (26)
-    Mat<DoFS2, DoFNoise> Fw = left * Adj * df_dw() * dt;                   // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (27)
+    Mat<DoFS2, DoFNoise> Fw = left * Jr * df_dw() * dt;                   // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (27)
 
     P = Fx * P * Fx.transpose() + Fw * Q * Fw.transpose(); 
 
