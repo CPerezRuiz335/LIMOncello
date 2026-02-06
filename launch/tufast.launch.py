@@ -14,7 +14,7 @@ def generate_launch_description():
         output='screen',
         emulate_tty=True,
         parameters=[
-            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'ouster.yaml']),
+            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'TUFast.yaml']),
             {'use_sim_time': False}
         ],
     )

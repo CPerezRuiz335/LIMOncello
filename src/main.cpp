@@ -87,7 +87,7 @@ public:
     // Set callbacks and publishers
     rclcpp::SubscriptionOptions lidar_opt, imu_opt, stop_opt;
     lidar_opt.callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    imu_opt.callback_group   = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    imu_opt.callback_group   = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     stop_opt.callback_group  = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(

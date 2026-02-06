@@ -99,27 +99,27 @@ PROFC_NODE("predict")
     
     // S2 particular cases. No increment for g
       Mat<3> AdjS2, JrS2;
-      S2::compose(g(), {0., 0., 0.}, AdjS2, JrS2);
+      S2::boxplus(g(), {0., 0., 0.}, AdjS2, JrS2);
 
       Adj.template bottomRightCorner<3, 3>() = AdjS2;
       Jr.template bottomRightCorner<3, 3>() = JrS2;
 
-      // Projections: Left
+      // Leftmost Jacobian
       Mat<2, 3> Jx;
       S2::ominus(g(), g(), Jx);
 
       Mat<DoFS2, DoF> left = Mat<DoFS2, DoF>::Identity();
       left.template bottomRightCorner<2, 3>() = Jx;
       
-      // Projections: Right
+      // Rightmost Jacobian
       Mat<3, 2> Ju;
       S2::oplus(g(), {0., 0.}, {}, Ju);
 
       Mat<DoF, DoFS2> right = Mat<DoF, DoFS2>::Identity();
       right.template bottomRightCorner<3, 2>() = Ju;
 
-    Mat<DoFS2>           Fx = left * (Adj + Jr * df_dx(imu) * dt) * right; // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (26)
-    Mat<DoFS2, DoFNoise> Fw = left * Adj * df_dw() * dt;                   // He-2021, [https://arxiv.org/abs/2102.03804] Eq. (27)
+    Mat<DoFS2>           Fx = left * (Adj + Jr * df_dx(imu) * dt) * right; // Pérez-Ruiz-2026 [https://arxiv.org/abs/2512.19567] Eq. (8a)
+    Mat<DoFS2, DoFNoise> Fw = left * Jr * df_dw() * dt;                    // Pérez-Ruiz-2026 [https://arxiv.org/abs/2512.19567] Eq. (8b)
 
     P = Fx * P * Fx.transpose() + Fw * Q * Fw.transpose(); 
 

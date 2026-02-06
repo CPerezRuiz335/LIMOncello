@@ -11,7 +11,7 @@
       frame_id: map
 
 
-    verbose: true   # print performance board
+    verbose: false   # print performance board
     debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 

@@ -32,7 +32,7 @@ namespace S2 {
     return manif::SO3d::Tangent(x).exp().rotation();
   }
 
-  Vector3d compose(const Vector3d& x, 
+  Vector3d boxplus(const Vector3d& x, 
                    const Vector3d& y,
                    Opt<Matrix3d> J_x = std::nullopt,
                    Opt<Matrix3d> J_y = std::nullopt) {
