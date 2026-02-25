@@ -33,7 +33,7 @@
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: 3.               # time to estimate (during this time, the 
+        time: 2.               # time to estimate (during this time, the 
                               # robot must be at stand still)
 
       time_offset: true # whether to take into account a possible sync offset
