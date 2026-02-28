@@ -12,7 +12,7 @@
 
 
     verbose: false   # print debug/performance board
-    debug: false     # fill useful intermediate pcl (deskewed, processed ...) 
+    debug: true     # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:
