@@ -3,7 +3,7 @@
     topics:
       input:
         lidar: /velodyne_points
-        imu: /EL/Sensors/vectornav/IMU
+        imu: /imu/data
         stop_ioctree_update: /stop
       output:
         state: state  
@@ -33,7 +33,7 @@
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: 3.               # time to estimate (during this time, the 
+        time: 0.0               # time to estimate (during this time, the 
                               # robot must be at stand still)
 
       time_offset: true # whether to take into account a possible sync offset
@@ -41,12 +41,12 @@
 
       extrinsics:
         imu2baselink:
-          t: [0., 0., 0.1] # (x, y, z) [meters]
+          t: [0., 0., 0.0] # (x, y, z) [meters]
           R: [0., 0., 0.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
-          t: [1.10, 0.0, 0.0] # (x, y, z) [meters]
-          R: [0.0, -3.5, 0.0] # roll, pitch, yaw [deg]
+          t: [0.043428, -0.002265, 0.156538] # (x, y, z) [meters]
+          R: [-0.528, 0.507, 1.542] # roll, pitch, yaw [deg]
         
         # NOTE: Initial lidar2imu extrinsics are obtained from 
         # imu2baslink and lidar2baselink
@@ -83,7 +83,7 @@
         max: [0., 0., 0.] # [m] (x, y, z)
 
       fov: # crop field of view
-        active: true
+        active: false
         value: 180.  # [deg]
       
       rate_sampling: # quick downsample
@@ -93,17 +93,16 @@
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.0001                      
-      lidar_noise: 0.0005
+      tolerance: 0.01                      
+      lidar_noise: 0.01
       estimate_extrinsics: false
 
       covariance:
-        gyro: 6.01e-4        # [rad/s^2]
-        accel: 1.53e-2       # [m^2]
-        bias_gyro: 1.54e-5   # [rad^2/s^2 * sqrt(s)]
-        bias_accel: 3.38e-4  # [m/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
-                            # i.e., P = I * initial_cov 
+        gyro: 1.0270904839480961e-02        # [rad/s^2]
+        accel: 1.1197412605492375e-02       # [m^2]
+        bias_gyro: 9.1355383994881894e-05  # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 1.1751767903346351e-04   # [m/s * sqrt(s)]
+        initial_cov: 0.5   # Initial covariance for every element in the state
       
       plane:                     # plane features for point to plane ICP
         points: 5                # num of points that constitute a plane

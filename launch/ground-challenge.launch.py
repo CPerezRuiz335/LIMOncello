@@ -14,7 +14,7 @@ def generate_launch_description():
         output='screen',
         emulate_tty=True,
         parameters=[
-            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'city.yaml']),
+            PathJoinSubstitution([FindPackageShare('limoncello'), 'config', 'ground-challenge.yaml']),
             {'use_sim_time': False}
         ],
     )
