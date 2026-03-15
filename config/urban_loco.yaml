@@ -2,8 +2,8 @@
   ros__parameters:
     topics:
       input:
-        lidar: /livox/lidar
-        imu:   /livox/imu 
+        lidar: /rslidar_points
+        imu: /imu_raw
         stop_ioctree_update: /stop
       output:
         state: state  
@@ -11,13 +11,13 @@
       frame_id: map
 
 
-    verbose: false   # print performance board
+    verbose: true   # print performance board
     debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
     sensors:
       lidar:
-        type: 6 #  0: OUSTER 
+        type: 1 #  0: OUSTER 
                 #  1: VELODYNE
                 #  2: HESAI   
                 #  3: LIVOX
@@ -27,21 +27,21 @@
         end_of_sweep: false # whether the sweep reference time is w.r.t. the
                             # start or the end of the scan (only applies to VELODYNE/OUSTER)
       imu:
-        hz: 55
+        hz: 100
 
       calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: .7               # time to estimate (during this time, the 
+        time: 1.               # time to estimate (during this time, the 
                               # robot must be at stand still)
-
+      
       time_offset: false # whether to take into account a possible sync offset
                         # between IMU and LiDAR (set to true if they are not properly in sync)
 
       extrinsics:
         imu2baselink:
-          t: [0., 0., 0.]  # (x, y, z) [meters]
+          t: [0., 0., 0.0] # (x, y, z) [meters]
           R: [0., 0., 0.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
@@ -50,10 +50,10 @@
         
         # NOTE: Initial lidar2imu extrinsics are obtained from 
         # imu2baslink and lidar2baselink
-        
+
       intrinsics:
-        accel_bias: [ 0.0001, 0.0001, 0.0001 ]  # [m/s^2]
-        gyro_bias:  [ 0.0001, 0.0001, 0.0001 ]  # [rad/s]
+        accel_bias: [ 0.001, 0.001, 0.001 ]  # [m/s^2]
+        gyro_bias:  [ 0.001, 0.001, 0.001 ]  # [rad/s]
         sm: [ 1.,  0.,  0.,
               0.,  1.,  0.,
               0.,  0.,  1. ]
@@ -88,31 +88,31 @@
       
       rate_sampling: # quick downsample
         active: false
-        value: 3
+        value: 2
 
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
       tolerance: 0.001                      
-      lidar_noise: 0.0005
+      lidar_noise: 0.001
       estimate_extrinsics: false
 
       covariance:
-        gyro: 0.1        # [rad/s^2]
-        accel: 1.       # [m^2]
-        bias_gyro: 0.2   # [rad^2/s^2 * sqrt(s)]
-        bias_accel: 0.2 # [m/s * sqrt(s)]
+        gyro: 0.01        # [rad/s^2]
+        accel: 0.1       # [m^2]
+        bias_gyro: 0.001  # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 0.01   # [m/s * sqrt(s)]
         initial_cov: [
           0.01, # position 
           0.01, # rotation
-          0.1,  # velocity
+          0.01,  # velocity
           0.01,  # accel bias
           0.01,  # gyro bias
           0.01  # gravity
-        ]  
-      
+        ]   
+        
       plane:                     # plane features for point to plane ICP
-        points: 5                # num of points that constitute a plane
+        points: 12                # num of points that constitute a plane
         max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
         plane_threshold: 0.1    # [m] max distance from point to plane to be 
                                 # considered a valid plane 

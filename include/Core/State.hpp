@@ -80,7 +80,14 @@ struct State {
                            * extrinsics.gravity));
 
     P.setIdentity();
-    P *= cfg.ikfom.covariance.initial_cov;
+    P *= 0.01;
+
+    P.diagonal().segment(0, 3).setConstant(cfg.ikfom.covariance.initial_cov.position);
+    P.diagonal().segment(6, 3).setConstant(cfg.ikfom.covariance.initial_cov.rotation);
+    P.diagonal().segment(3, 3).setConstant(cfg.ikfom.covariance.initial_cov.velocity);
+    P.diagonal().segment(16, 3).setConstant(cfg.ikfom.covariance.initial_cov.gyro_bias);
+    P.diagonal().segment(19, 3).setConstant(cfg.ikfom.covariance.initial_cov.accel_bias);
+    P.diagonal().segment(22, 2).setConstant(cfg.ikfom.covariance.initial_cov.gravity);
 
     w.setZero();
     a.setZero();

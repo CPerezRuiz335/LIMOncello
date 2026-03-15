@@ -105,7 +105,15 @@ struct Config {
   		float accel;
   		float bias_gyro;
   		float bias_accel;
-		float initial_cov;
+		struct InitialCov {
+			float position;
+			float rotation;
+			float velocity;
+			float accel_bias;
+			float gyro_bias;
+			float gravity;
+		} initial_cov;
+
   	} covariance;
 
   	struct {

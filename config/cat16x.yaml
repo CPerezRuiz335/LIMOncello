@@ -102,8 +102,14 @@
         accel: 1.53e-2       # [m^2]
         bias_gyro: 1.54e-5   # [rad^2/s^2 * sqrt(s)]
         bias_accel: 3.38e-4  # [m/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
-                            # i.e., P = I * initial_cov 
+        initial_cov: [
+          0.01, # position 
+          0.01, # rotation
+          0.01,  # velocity
+          0.05,  # accel bias
+          0.05,  # gyro bias
+          0.01  # gravity
+        ]    
       
       plane:                     # plane features for point to plane ICP
         points: 5                # num of points that constitute a plane

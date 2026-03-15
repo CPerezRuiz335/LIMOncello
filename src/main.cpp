@@ -278,12 +278,13 @@ public:
     if (state_buffer_.front().stamp < end_stamp) {
       std::unique_lock<decltype(mtx_buffer_)> lock(mtx_buffer_);
 
-      std::cout << std::setprecision(20);
-      std::cout <<
-        "PROPAGATE WAITING... \n" <<
-        "     - buffer time: " << state_buffer_.front().stamp << "\n"
-        "     - end scan time: " << end_stamp << std::endl;
-      
+      RCLCPP_INFO(
+        get_logger(),
+        "PROPAGATE WAITING...\n"
+        "     - buffer time: %.20f\n"
+        "     - end scan time: %.20f",
+        state_buffer_.front().stamp, end_stamp);
+
       cv_prop_stamp_.wait(lock, [this, &end_stamp] { 
         return state_buffer_.front().stamp >= end_stamp;
       });
@@ -310,7 +311,7 @@ public:
       mtx_state_.unlock();
       return;
     }
-
+    
     state_.update(filtered, ioctree_);
     Eigen::Isometry3f T = (state_.isometry() * state_.L2I_isometry()).cast<float>();
   

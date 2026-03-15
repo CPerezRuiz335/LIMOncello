@@ -318,7 +318,15 @@ void fill_config(Config& cfg, rclcpp::Node* n) {
   n->get_parameter("IKFoM.covariance.accel",       cfg.ikfom.covariance.accel);
   n->get_parameter("IKFoM.covariance.bias_gyro",   cfg.ikfom.covariance.bias_gyro);
   n->get_parameter("IKFoM.covariance.bias_accel",  cfg.ikfom.covariance.bias_accel);
-  n->get_parameter("IKFoM.covariance.initial_cov", cfg.ikfom.covariance.initial_cov);
+
+  std::vector<double> covariances;
+  n->get_parameter("IKFoM.covariance.initial_cov", covariances);
+    cfg.ikfom.covariance.initial_cov.position = covariances[0];
+    cfg.ikfom.covariance.initial_cov.rotation = covariances[1];
+    cfg.ikfom.covariance.initial_cov.velocity = covariances[2];
+    cfg.ikfom.covariance.initial_cov.accel_bias = covariances[3];
+    cfg.ikfom.covariance.initial_cov.gyro_bias = covariances[4];
+    cfg.ikfom.covariance.initial_cov.gravity = covariances[5];
 
   n->get_parameter("IKFoM.plane.points",          cfg.ikfom.plane.points);
   n->get_parameter("IKFoM.plane.max_sqrt_dist",   cfg.ikfom.plane.max_sqrt_dist);

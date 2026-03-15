@@ -33,7 +33,7 @@
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
         accel: true             # estimate lin. accel. bias
         gyro: true              # estimate ang. vel. bias
-        time: .5               # time to estimate (during this time, the 
+        time: .0               # time to estimate (during this time, the 
                               # robot must be at stand still)
 
       time_offset: false # whether to take into account a possible sync offset
@@ -102,8 +102,14 @@
         accel: 1.53e-2       # [m^2]
         bias_gyro: 1.54e-5   # [rad^2/s^2 * sqrt(s)]
         bias_accel: 3.38e-4  # [m/s * sqrt(s)]
-        initial_cov: 0.01     # Initial covariance for every element in the state
-                            # i.e., P = I * initial_cov 
+        initial_cov: [
+          0.01, # position 
+          0.01, # rotation
+          0.01,  # velocity
+          0.01,  # accel bias
+          0.01,  # gyro bias
+          0.01  # gravity
+        ]  
       
       plane:                     # plane features for point to plane ICP
         points: 12                # num of points that constitute a plane

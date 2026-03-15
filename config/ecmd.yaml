@@ -31,29 +31,29 @@
 
       calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
         gravity_align: false     # estimate gravity vector and align initial robot's rotation
-        accel: true             # estimate lin. accel. bias
-        gyro: true              # estimate ang. vel. bias
-        time: 0.0               # time to estimate (during this time, the 
+        accel: false             # estimate lin. accel. bias
+        gyro: false              # estimate ang. vel. bias
+        time: 1.               # time to estimate (during this time, the 
                               # robot must be at stand still)
-
-      time_offset: true # whether to take into account a possible sync offset
+      
+      time_offset: false # whether to take into account a possible sync offset
                         # between IMU and LiDAR (set to true if they are not properly in sync)
 
       extrinsics:
         imu2baselink:
           t: [0., 0., 0.0] # (x, y, z) [meters]
-          R: [0., 0., 0.]  # roll, pitch, yaw [deg]
+          R: [0., 0., -90.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
           t: [0.043428, -0.002265, 0.156538] # (x, y, z) [meters]
-          R: [-0.528, 0.507, 1.542] # roll, pitch, yaw [deg]
+          R: [0., 0., -90.] # roll, pitch, yaw [deg]
         
         # NOTE: Initial lidar2imu extrinsics are obtained from 
         # imu2baslink and lidar2baselink
-        
+
       intrinsics:
-        accel_bias: [ 0.0001, 0.0001, 0.0001 ]  # [m/s^2]
-        gyro_bias:  [ 0.0001, 0.0001, 0.0001 ]  # [rad/s]
+        accel_bias: [ 0.01, 0.01, 0.01 ]  # [m/s^2]
+        gyro_bias:  [ 0.001, 0.001, 0.001 ]  # [rad/s]
         sm: [ 1.,  0.,  0.,
               0.,  1.,  0.,
               0.,  0.,  1. ]
@@ -71,11 +71,11 @@
       
     filters:
       voxel_grid:
-        leaf_size: [ .5, .5, .5 ]
+        leaf_size: [ .25, .25, .25 ]
 
       min_distance: # sphere crop
         active: true
-        value: 1.5  # [m]
+        value: 4.5  # [m]
 
       crop_box: # w.r.t baselink frame 
         active: false 
@@ -93,8 +93,8 @@
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.01                      
-      lidar_noise: 0.01
+      tolerance: 0.001                      
+      lidar_noise: 0.001
       estimate_extrinsics: false
 
       covariance:
@@ -102,8 +102,15 @@
         accel: 1.1197412605492375e-02       # [m^2]
         bias_gyro: 9.1355383994881894e-05  # [rad^2/s^2 * sqrt(s)]
         bias_accel: 1.1751767903346351e-04   # [m/s * sqrt(s)]
-        initial_cov: 0.5   # Initial covariance for every element in the state
-      
+        initial_cov: [
+          0.01, # position 
+          0.01, # rotation
+          20.0,  # velocity
+          0.05,  # accel bias
+          0.05,  # gyro bias
+          0.01  # gravity
+        ]   
+        
       plane:                     # plane features for point to plane ICP
         points: 5                # num of points that constitute a plane
         max_sqrt_dist: 2.         # [m] if a neighor exceeds is too far the plane is not valid
