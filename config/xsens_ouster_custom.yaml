@@ -2,11 +2,11 @@
   ros__parameters:
     topics:
       input:
-        lidar: /os_cloud_node/points
-        imu:   /vn100/imu
+        lidar: /ouster/points #qui metteremo lil topic del pcl del lidar nostro, che è /ouster/points
+        imu:   /imu/data  #qui dobbiamo mettere il topic dove prende i dati dell'imu, nel nostro caso i topic di xsens
         stop_ioctree_update: /stop
       output:
-        state: state  
+        state: lidar_odom1
         frame: full_pcl
       frame_id: map
 
@@ -24,29 +24,29 @@
                 #  4: livox_interfaces/CustomMsg 
                 #  5: livox_ros_driver/CustomMsg 
                 #  6: livox_ros_driver2/CustomMsg 
-        end_of_sweep: false # whether the sweep reference time is w.r.t. the
+        end_of_sweep: false # whether the sweep reference time is w.r.t. the CAPIRE SE ATTIVARLO
                             # start or the end of the scan (only applies to VELODYNE/OUSTER)
       imu:
-        hz: 100
+        hz: 400 #CONTROLLARE LIVE A QUANTO PUBBLICA (DA BAGS E' CIRCA 370)
 
       calibration:  # automatic IMU calibration (if all set to false, no calibration will be done)
-        gravity_align: false     # estimate gravity vector and align initial robot's rotation
-        accel: true             # estimate lin. accel. bias
-        gyro: true              # estimate ang. vel. bias
-        time: 1.               # time to estimate (during this time, the 
+        gravity_align: true     # estimate gravity vector and align initial robot's rotation
+        accel: true           # estimate lin. accel. bias
+        gyro: true             # estimate ang. vel. bias
+        time: 4.0              # time to estimate (during this time, the 
                               # robot must be at stand still)
 
-      time_offset: true # whether to take into account a possible sync offset
+      time_offset: true #tecnicamente se sono sincronizzati software dovremmo tenerlo false whether to take into account a possible sync offset #ATTIVARE FINCHE NON ABBIAMO SINCRONIZZAZIONE
                         # between IMU and LiDAR (set to true if they are not properly in sync)
 
       extrinsics:
-        imu2baselink:
+        imu2baselink: #SE VOGLIO CHE  L'IMU SIA IL MIO BASE LINK, ALLORA LASCIO QUESTO A 0 E CAMBIO SOLO LIDAR2BASELINK. ALTRIMENTI DEVO SCEGLIERE IO UN PUNTO FISICO DELLA MACCHINA DA USARE COME BASE LINK E CAMBIARE ANCHE QUESTA
           t: [0., 0., 0.]  # (x, y, z) [meters]
-          R: [180., 0., 0.]  # roll, pitch, yaw [deg]
+          R: [0., 0., 180.]  # roll, pitch, yaw [deg]
 
-        lidar2baselink:
-          t: [0., 0., 0.] # (x, y, z) [meters]
-          R: [0., 0., 0.] # roll, pitch, yaw [deg]
+        lidar2baselink: #DEVO MISURARE QUANTO è DISTANTE I LIDAR DALL'IMU (SE E' IL MIO BASELINK) E NEL CASO SIA RUOTATO VEDERE DI QUANTO E' RUOTATO.
+          t: [1.11, 0.0, 0.55] # (x, y, z) [meters] QUI DOBBIAMO MISURARE LE DISTAZNE TRA LIDAR E IMU
+          R: [0., 0., 180.] # roll, pitch, yaw [deg] SE I SISTEMI DI RIFERIMENTO SONO ALLINEATI ALLORA METTIAMO TUTTO 0
         
         # NOTE: Initial lidar2imu extrinsics are obtained from 
         # imu2baslink and lidar2baselink
@@ -75,12 +75,12 @@
 
       min_distance: # sphere crop
         active: true
-        value: 2.5  # [m]
+        value: 2.5  # [m] #CAMBIARE
 
-      crop_box: # w.r.t baselink frame 
+      crop_box: # w.r.t baselink frame #
         active: false 
-        min: [0., 0., 0.] # [m] (x, y, z)
-        max: [0., 0., 0.] # [m] (x, y, z)
+        min: [-30.0, -30.0, -10.0] # [m] (x, y, z)
+        max: [30.0, 30.0, 15.0] # [m] (x, y, z)
 
       fov: # crop field of view
         active: false
@@ -93,16 +93,16 @@
 
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
-      tolerance: 0.001                      
-      lidar_noise: 0.001
+      tolerance: 0.001                  
+      lidar_noise: 0.05
       estimate_extrinsics: false
 
       covariance:
-        gyro: 6.01e-4        # [rad/s^2]
-        accel: 1.53e-2       # [m^2]
-        bias_gyro: 1.54e-5   # [rad^2/s^2 * sqrt(s)]
-        bias_accel: 3.38e-4  # [m/s * sqrt(s)]
-        initial_cov: [
+        gyro: 1.48e-2 #1.48e-8       # [rad/s^2]
+        accel: 0.5 #3.46e-3 #3.46e-7        # [m^2]
+        bias_gyro: 1.59e-7 #1.59e-9   # [rad^2/s^2 * sqrt(s)]
+        bias_accel: 2.16e-7 #2.16e-8  # [m/s * sqrt(s)]
+        initial_cov: [ 
           0.01, # position 
           0.01, # rotation
           0.1,  # velocity
@@ -113,8 +113,8 @@
       
       plane:                     # plane features for point to plane ICP
         points: 15                # num of points that constitute a plane
-        max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.1    # [m] max distance from point to plane to be 
+        max_sqrt_dist: 2.         # [m] if a neighor exceeds is too far the plane is not valid
+        plane_threshold: 0.5    # [m] max distance from point to plane to be 
                                 # considered a valid plane 
 
     iOctree:

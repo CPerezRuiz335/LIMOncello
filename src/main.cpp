@@ -11,6 +11,9 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <std_msgs/msg/bool.hpp>
 
+#include <rosbag2_cpp/reader.hpp>
+#include <rosbag2_storage/storage_options.hpp>
+
 #include "Core/Octree.hpp"
 #include "Core/State.hpp"
 #include "Core/Cloud.hpp"
@@ -365,17 +368,52 @@ public:
 int main(int argc, char** argv) {
 
   pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
-  
+
   rclcpp::init(argc, argv);
+
+  const std::string BAG_PATH = "/home/charlie/ROS2/rosbags/MCD_Viral/ntu_day_01_db3";
 
   rclcpp::Node::SharedPtr manager = std::make_shared<Manager>();
 
-  rclcpp::executors::MultiThreadedExecutor executor; // by default using all available cores
+  rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(manager);
-  executor.spin();
+
+  rosbag2_cpp::Reader reader;
+  rosbag2_storage::StorageOptions storage_opts;
+  storage_opts.uri        = BAG_PATH;
+  storage_opts.storage_id = "sqlite3";   // does not work with mcap, idk
+  
+  rosbag2_cpp::ConverterOptions converter_opts;
+  converter_opts.input_serialization_format  = "cdr";
+  converter_opts.output_serialization_format = "cdr";
+
+  reader.open(storage_opts, converter_opts);
+
+  Config& cfg = Config::getInstance();
+  const std::string imu_topic   = cfg.topics.input.imu;
+  const std::string lidar_topic = cfg.topics.input.lidar;
+
+  while (reader.has_next() && rclcpp::ok()) {
+    auto bag_msg = reader.read_next();
+    rclcpp::SerializedMessage serialized(*bag_msg->serialized_data);
+
+    if (bag_msg->topic_name == imu_topic) {
+      auto msg = std::make_shared<sensor_msgs::msg::Imu>();
+      rclcpp::Serialization<sensor_msgs::msg::Imu>().deserialize_message(&serialized, msg.get());
+      static_cast<Manager*>(manager.get())->imu_callback(msg);
+
+    } else if (bag_msg->topic_name == lidar_topic) {
+      auto msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+      rclcpp::Serialization<sensor_msgs::msg::PointCloud2>().deserialize_message(&serialized, msg.get());
+      static_cast<Manager*>(manager.get())->PointCloud2_callback(msg);
+    }
+
+    executor.spin_some(std::chrono::milliseconds(1));
+  }
+
+  reader.close();
+  RCLCPP_INFO(manager->get_logger(), "Bag playback finished.");
 
   rclcpp::shutdown();
-
   return 0;
 }
-

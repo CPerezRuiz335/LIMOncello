@@ -27,6 +27,9 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
+find_package(rosbag2_cpp REQUIRED)
+find_package(rosbag2_storage REQUIRED)
+
 
 # Livox support
 find_package(livox_interfaces REQUIRED)
@@ -59,6 +62,9 @@ ament_target_dependencies(${PROJECT_NAME}
     livox_interfaces
 	  livox_ros_driver
 	  livox_ros_driver2
+    rosbag2_cpp
+    rosbag2_storage
+    
 )
 
 target_link_libraries(${PROJECT_NAME}
