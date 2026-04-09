@@ -3,7 +3,7 @@
     topics:
       input:
         lidar: /os_cloud_node/points
-        imu:   /os_cloud_node/imu 
+        imu:   /vn100/imu 
         stop_ioctree_update: /stop
       output:
         state: state  
@@ -11,7 +11,7 @@
       frame_id: map
 
 
-    verbose: false   # print performance board
+    verbose: true   # print performance board
     debug: true    # fill useful intermediate pcl (deskewed, processed ...) 
                     # for visualizing purposes
 
@@ -42,7 +42,7 @@
       extrinsics:
         imu2baselink:
           t: [0., 0., 0.]  # (x, y, z) [meters]
-          R: [0., 0., 0.]  # roll, pitch, yaw [deg]
+          R: [180., 0., 0.]  # roll, pitch, yaw [deg]
 
         lidar2baselink:
           t: [0., 0., 0.] # (x, y, z) [meters]
@@ -71,7 +71,7 @@
       
     filters:
       voxel_grid:
-        leaf_size: [ 0.5, 0.5, 0.5 ]
+        leaf_size: [ 0.25, 0.25, 0.25 ]
 
       min_distance: # sphere crop
         active: true
@@ -94,7 +94,7 @@
     IKFoM:  # Iterative Kalman Filter on Manifolds lib
       max_iters: 3  # max num of iterations of the IESEKF
       tolerance: 0.001                      
-      lidar_noise: 0.001
+      lidar_noise: 0.01
       estimate_extrinsics: false
 
       covariance:
@@ -112,10 +112,11 @@
         ] 
       
       plane:                     # plane features for point to plane ICP
-        points: 15                # num of points that constitute a plane
-        max_sqrt_dist: 1.         # [m] if a neighor exceeds is too far the plane is not valid
-        plane_threshold: 0.1    # [m] max distance from point to plane to be 
+        points: 5                # num of points that constitute a plane
+        max_sqrt_dist: 2.         # [m] if a neighor exceeds is too far the plane is not valid
+        plane_threshold: 0.05    # [m] max distance from point to plane to be 
                                 # considered a valid plane 
+        max_num: 4000        
 
     iOctree:
       min_extent: 0.2

@@ -331,6 +331,7 @@ void fill_config(Config& cfg, rclcpp::Node* n) {
   n->get_parameter("IKFoM.plane.points",          cfg.ikfom.plane.points);
   n->get_parameter("IKFoM.plane.max_sqrt_dist",   cfg.ikfom.plane.max_sqrt_dist);
   n->get_parameter("IKFoM.plane.plane_threshold", cfg.ikfom.plane.plane_threshold);
+  n->get_parameter("IKFoM.plane.max_num",         cfg.ikfom.plane.max_num);
 
   // --------------------------------------------------
   // IOCTREE

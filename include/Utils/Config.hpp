@@ -120,6 +120,7 @@ struct Config {
   		int points;
   		float max_sqrt_dist;
   		float plane_threshold;
+		int   max_num;
   	} plane;
   } ikfom;
 

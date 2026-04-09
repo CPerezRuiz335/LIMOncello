@@ -86,7 +86,7 @@ public:
 
     // Set callbacks and publishers
     rclcpp::SubscriptionOptions lidar_opt, imu_opt, stop_opt;
-    lidar_opt.callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    lidar_opt.callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     imu_opt.callback_group   = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     stop_opt.callback_group  = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
@@ -278,12 +278,12 @@ public:
     if (state_buffer_.front().stamp < end_stamp) {
       std::unique_lock<decltype(mtx_buffer_)> lock(mtx_buffer_);
 
-      RCLCPP_INFO(
-        get_logger(),
-        "PROPAGATE WAITING...\n"
-        "     - buffer time: %.20f\n"
-        "     - end scan time: %.20f",
-        state_buffer_.front().stamp, end_stamp);
+      // RCLCPP_INFO(
+      //   get_logger(),
+      //   "PROPAGATE WAITING...\n"
+      //   "     - buffer time: %.20f\n"
+      //   "     - end scan time: %.20f",
+      //   state_buffer_.front().stamp, end_stamp);
 
       cv_prop_stamp_.wait(lock, [this, &end_stamp] { 
         return state_buffer_.front().stamp >= end_stamp;
@@ -302,20 +302,20 @@ public:
 
   mtx_state_.lock();
 
-    PointCloudT::Ptr deskewed    = deskew(raw, state_, interpolated, offset, sweep_time);
-    PointCloudT::Ptr downsampled = voxel_grid(deskewed);
+    PointCloudT::Ptr downsampled = voxel_grid(raw);
     PointCloudT::Ptr filtered    = filter(downsampled, 
                                           cfg.sensors.extrinsics.imu2baselink * state_.L2I_isometry());
+    PointCloudT::Ptr deskewed    = deskew(filtered, state_, interpolated, offset, sweep_time);
 
-    if (filtered->points.empty()) {
+    if (deskewed->points.empty()) {
       RCLCPP_ERROR(get_logger(), "Filtered cloud is empty!");
       mtx_state_.unlock();
       return;
     }
     
-    state_.update(filtered, ioctree_);
+    state_.update(deskewed, ioctree_);
     Eigen::Isometry3f T = (state_.isometry() * state_.L2I_isometry()).cast<float>();
-  
+
   mtx_buffer_.lock();
     state_buffer_[0] = state_;
   mtx_buffer_.unlock();
@@ -327,11 +327,6 @@ public:
     deskewed->width  = static_cast<uint32_t>(deskewed->points.size());
     pcl::transformPointCloud(*deskewed, *global, T);
     
-    PointCloudT::Ptr to_save(new PointCloudT);
-    filtered->height = 1;                     
-    filtered->width  = static_cast<uint32_t>(filtered->points.size());
-    pcl::transformPointCloud(*filtered, *to_save, T);
-
     // Publish
     pub_state_->publish(toROS(state_, sweep_time));
     pub_frame_->publish(toROS(global, sweep_time));
@@ -340,12 +335,12 @@ public:
       pub_raw_->publish(toROS(raw, sweep_time));
       pub_deskewed_->publish(toROS(deskewed, sweep_time));
       pub_downsampled_->publish(toROS(downsampled, sweep_time));
-      pub_filtered_->publish(toROS(to_save, sweep_time));
+      pub_filtered_->publish(toROS(global, sweep_time));
     }
 
     // Update map
     if (not stop_ioctree_update_)
-      ioctree_.update(to_save->points);
+      ioctree_.update(global->points);
 
     if (cfg.verbose)
       PROFC_PRINT()

@@ -3,6 +3,7 @@
 #include <execution>
 #include <numeric>
 #include <algorithm>
+#include <random>
 #include <boost/circular_buffer.hpp>
 
 #include <Eigen/Dense>
@@ -198,43 +199,54 @@ PROFC_NODE("update")
                        Mat<Eigen::Dynamic, DoFObs>& H,
                        Mat<Eigen::Dynamic, 1>&      z) {
 
-      int N = cloud->size();
+      int total = static_cast<int>(cloud->size());
+      int N = std::min(total, cfg.ikfom.plane.max_num);
 
-      std::vector<bool> chosen(N, false);
+      std::vector<uint8_t> chosen(N, 0);
       Planes planes(N);
 
-      std::vector<int> indices(N);
+      std::vector<int> indices(total);
       std::iota(indices.begin(), indices.end(), 0);
-      
+
+      std::mt19937 rng(std::random_device{}());
+      std::shuffle(indices.begin(), indices.end(), rng);
+      indices.resize(N);
+
+      std::vector<int> slots(N);
+      std::iota(slots.begin(), slots.end(), 0);
+
       std::for_each(
         std::execution::par_unseq,
-        indices.begin(),
-        indices.end(),
-        [&](int i) {
-          PointT pt = cloud->points[i];
+        slots.begin(),
+        slots.end(),
+        [&](int j) {
+          int i = indices[j];
+
+          const PointT& pt = cloud->points[i];
           Vec<3> p = pt.getVector3fMap().cast<double>();
-          Vec<3> g = s.isometry() * s.L2I_isometry() * p; // global coords 
+          Vec<3> g = s.isometry() * s.L2I_isometry() * p;
 
           std::vector<pcl::PointXYZ> neighbors;
           std::vector<float> pointSearchSqDis;
-          map.knn(pcl::PointXYZ(g(0), g(1), g(2)),
-                  cfg.ikfom.plane.points,
-                  neighbors,
-                  pointSearchSqDis);
-          
-          if (neighbors.size() < cfg.ikfom.plane.points 
-              or pointSearchSqDis.back() > cfg.ikfom.plane.max_sqrt_dist)
-                return;
-          
+          map.knn(
+              pcl::PointXYZ(g(0), g(1), g(2)),
+              cfg.ikfom.plane.points,
+              neighbors,
+              pointSearchSqDis
+          );
+
+          if (neighbors.size() < cfg.ikfom.plane.points ||
+              pointSearchSqDis.back() > cfg.ikfom.plane.max_sqrt_dist)
+              return;
+
           Eigen::Vector4d p_abcd = Eigen::Vector4d::Zero();
-          if (not estimate_plane(p_abcd, neighbors, cfg.ikfom.plane.plane_threshold))
-            return;
+          if (!estimate_plane(p_abcd, neighbors, cfg.ikfom.plane.plane_threshold))
+              return;
 
-
-          chosen[i] = true;
-          planes[i] = Plane(p, p_abcd);
+          chosen[j] = 1;
+          planes[j] = Plane(p, p_abcd);
         }
-      ); // end for_each
+      );
 
       Planes valid_planes;
 
@@ -242,6 +254,9 @@ PROFC_NODE("update")
         if (chosen[i])
           valid_planes.push_back(planes[i]);        
       }
+
+      if (valid_planes.empty())
+        return false;
 
       H = Mat<>::Zero(valid_planes.size(), DoFObs);
       z = Mat<>::Zero(valid_planes.size(), 1);
@@ -275,6 +290,7 @@ PROFC_NODE("update")
         }
       );
 
+      return true;
     }; // end h_model
 
 // IESEKF UPDATE
@@ -293,7 +309,10 @@ PROFC_NODE("update")
     int i(0);
 
     do {
-      h_model(*this, H, z); // Update H,z and set K to zeros
+      if (not h_model(*this, H, z)) { // Update H,z and set K to zeros
+        std::cout << "NO VALID PLANES!!! INCREASE IKFoM.planes.max_num" << std::endl;
+        return;
+      }
 
       // project P to homemorphic space
         Mat<DoF> J_;
