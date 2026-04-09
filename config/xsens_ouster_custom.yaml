@@ -119,7 +119,7 @@
         max_num: 5000           # maxinum number of points to consider 
                                 # in the update. No heuristics applied!
                                 # The number of valid planes can be much 
-                                # smaller than, even zero (pure IMU)
+                                # smaller, even zero (pure IMU)
 
     iOctree:
       min_extent: 0.2
