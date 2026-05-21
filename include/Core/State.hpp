@@ -45,7 +45,8 @@ struct State {
   static constexpr int DoF = BundleT::DoF;  // DoF whole state
   static constexpr int DoFS2 = DoF-1;       // DoF g as S2
   static constexpr int DoFNoise = 4*3;      // b_w, b_a, n_{b_w}, n_{b_a}
-  static constexpr int DoFObs = manif::SGal3d::DoF + manif::SE3d::DoF;   // DoF obsevation equation
+  static constexpr int DoFObs_reduced = manif::SGal3d::DoF; // DoF obsevation equation (without extrinsics)
+  static constexpr int DoFObs_full = manif::SGal3d::DoF + manif::SE3d::DoF;   // DoF obsevation equation
 
   BundleT X;
   Mat<DoFS2> P;
@@ -55,8 +56,9 @@ struct State {
   Vec<3> a; // linear acceleration (IMU input)
 
   double stamp;
+  int DoFObs;
 
-  State() : stamp(-1.0) {};
+  State() : stamp(-1.0), DoFObs(DoFObs_full) {};
 
   void init() {
   
@@ -86,6 +88,8 @@ struct State {
     P.diagonal().segment(19, 3).setConstant(cfg.ikfom.covariance.initial_cov.accel_bias);
     P.diagonal().segment(22, 2).setConstant(cfg.ikfom.covariance.initial_cov.gravity);
 
+
+    DoFObs = cfg.ikfom.estimate_extrinsics ? DoFObs_full : DoFObs_reduced;
 
     w.setZero();
     a.setZero();
@@ -195,8 +199,8 @@ PROFC_NODE("update")
 // OBSERVATION MODEL
 
     auto h_model = [&](const State& s,
-                       Mat<Eigen::Dynamic, DoFObs>& H,
-                       Mat<Eigen::Dynamic, 1>&      z) {
+                       Eigen::MatrixXd& H,
+                       Mat<Eigen::Dynamic, 1>& z) {
 
       int N = cloud->size();
 
@@ -282,8 +286,8 @@ PROFC_NODE("update")
     BundleT    X_predicted = X;
     Mat<DoFS2> P_predicted = P;
 
-    Mat<Eigen::Dynamic, DoFObs> H;
-    Mat<Eigen::Dynamic, 1>      z;
+    Eigen::MatrixXd        H;
+    Mat<Eigen::Dynamic, 1> z;
     Mat<DoFS2> KH;
 
     double R = cfg.ikfom.lidar_noise;
@@ -305,19 +309,19 @@ PROFC_NODE("update")
         P = J_inv * P * J_inv.transpose(); // !! projection
 
       // Build K from blocks (numerical stability)
-        Mat<DoFObs> HTH = H.transpose() * H / R;
-        
+        Eigen::MatrixXd HTH = H.transpose() * H / R;
+
         Mat<DoFS2>  P_inv = P.inverse();
-        P_inv.template topLeftCorner<DoFObs, DoFObs>() += HTH;
+        P_inv.topLeftCorner(DoFObs, DoFObs) += HTH;
         P_inv = P_inv.inverse();
 
-        Vec<DoFS2> Kz = P_inv.template topLeftCorner<DoFS2, DoFObs>() * H.transpose() * z / R;
+        Vec<DoFS2> Kz = P_inv.topLeftCorner(DoFS2, DoFObs) * (H.transpose() * z) / R;
 
         KH.setZero();
-        KH.template topLeftCorner<DoFS2, DoFObs>() = P_inv.template topLeftCorner<DoFS2, DoFObs>() * HTH;
+        KH.topLeftCorner(DoFS2, DoFObs) = P_inv.topLeftCorner(DoFS2, DoFObs) * HTH;
 
-      dx = Kz + (KH - Mat<DoFS2>::Identity()) * J_inv * dx; 
-      
+      dx = Kz + (KH - Mat<DoFS2>::Identity()) * J_inv * dx;
+
       // Update manif Bundle, left g unmodified
       Tangent tau = Tangent::Zero();
       tau.coeffs().head(DoF-3) = dx.head(DoF-3);
